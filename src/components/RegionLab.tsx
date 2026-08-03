@@ -143,7 +143,10 @@ function N4FederationView({ model, selected, onSelect }: { model: RegionModel; s
   };
 
   const projectedBase = N4_BASE.map((point) => projectLabPoint(point, camera.yaw, camera.pitch));
-  const ground = [projectedBase[0], projectedBase[2], projectedBase[5], projectedBase[3]];
+  const regionNodes = regionIds.map((_, i) => {
+    const angle = -Math.PI / 2 + (i * Math.PI * 2) / regionIds.length;
+    return projectLabPoint({ x: Math.cos(angle) * 5, y: Math.sin(angle) * 2.5, z: 2.4 }, camera.yaw, camera.pitch);
+  });
 
   return (
     <div>
@@ -159,28 +162,21 @@ function N4FederationView({ model, selected, onSelect }: { model: RegionModel; s
         onPointerCancel={handleUp}
       >
         <rect width="900" height="520" fill="#10231f" />
-        <polygon points={ground.map((point) => `${point.x},${point.y}`).join(" ")} fill="#173e2d" stroke="#65c5a2" strokeWidth="3" />
-        {regionIds.map((regionId, layer) => {
-          const height = 1.3 + layer * 1.5;
+        {regionIds.map((regionId, i) => {
           const memberIds = model.regions[regionId];
-          const lifted = memberIds.map((clanId) => projectLabPoint({ ...N4_BASE[clanId], z: height }, camera.yaw, camera.pitch));
-          const base = memberIds.map((clanId) => projectedBase[clanId]);
-          const color = layer === 0 ? "#65c5a2" : "#f0aa4f";
-          const center = lifted.reduce((sum, point) => ({ x: sum.x + point.x / lifted.length, y: sum.y + point.y / lifted.length }), { x: 0, y: 0 });
+          const regionPoint = regionNodes[i];
+          const color = i === 0 ? "#65c5a2" : "#f0aa4f";
           return (
             <g key={regionId}>
-              {base.map((point, i) => (
-                <line key={i} x1={point.x} y1={point.y} x2={lifted[i].x} y2={lifted[i].y} stroke={color} strokeWidth={memberIds[i] === selected ? 4 : 2} opacity="0.7" />
+              {memberIds.map((clanId) => (
+                <line key={clanId} x1={projectedBase[clanId].x} y1={projectedBase[clanId].y} x2={regionPoint.x} y2={regionPoint.y} stroke={clanId === selected ? "#fff176" : color} strokeWidth={clanId === selected ? 4 : 2} opacity="0.78" />
               ))}
-              <polygon points={lifted.map((point) => `${point.x},${point.y}`).join(" ")} fill={color} fillOpacity="0.2" stroke={color} strokeWidth="3" strokeDasharray="8 5" />
-              {lifted.map((point, i) => (
-                <circle key={i} cx={point.x} cy={point.y} r={memberIds[i] === selected ? 8 : 5} fill={memberIds[i] === selected ? "#fff176" : color} stroke="#081b18" strokeWidth="2" />
-              ))}
-              <text x={center.x + 10} y={center.y - 6} fontFamily="IBM Plex Mono, monospace" fontSize="13" fontWeight="700" fill={color}>R{regionId + 1}</text>
+              <circle cx={regionPoint.x} cy={regionPoint.y} r="25" fill={color} stroke="#081b18" strokeWidth="4" />
+              <text x={regionPoint.x} y={regionPoint.y + 4} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="13" fontWeight="700" fill="#081b18">R{regionId + 1}</text>
+              <text x={regionPoint.x} y={regionPoint.y + 40} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="10" fontWeight="700" fill={color}>federation</text>
             </g>
           );
         })}
-        <line x1={projectedBase[selected].x} y1={projectedBase[selected].y} x2={450} y2={255} stroke="#fff176" strokeWidth="2" strokeDasharray="5 4" opacity="0.7" />
         {model.clans.map((clan, clanId) => {
           const point = projectedBase[clanId];
           return (
@@ -191,7 +187,7 @@ function N4FederationView({ model, selected, onSelect }: { model: RegionModel; s
           );
         })}
         <text x="24" y="30" fontFamily="IBM Plex Mono, monospace" fontSize="13" fontWeight="700" fill="#fff4cb">drag to orbit · click a labeled clan</text>
-        <text x="24" y="50" fontFamily="IBM Plex Mono, monospace" fontSize="11" fill="#a3d9b1">two raised federation planes · each contains three clans</text>
+        <text x="24" y="50" fontFamily="IBM Plex Mono, monospace" fontSize="11" fill="#a3d9b1">gold lines = the selected clan's incidence edges</text>
       </svg>
     </div>
   );
@@ -290,7 +286,7 @@ export default function RegionLab() {
           <LabModel model={model6} selected={selected6} onSelect={setSelected6}><ExplodedFederations model={model6} selected={selected6} /></LabModel>
         </LabCard>
 
-        <LabCard title="2. Incidence web + draggable 3D · n = 4" description="Each house cluster is a clan. The two raised triangles are federations, and the selected clan is connected to both of them.">
+        <LabCard title="2. Incidence web + draggable 3D · n = 4" description="Each house cluster is a clan. The two floating nodes are federations, and the selected clan is connected to each federation it belongs to.">
           <div className="lg:col-span-2">
             <LabModel model={model4} selected={selected4} onSelect={setSelected4}><N4FederationView model={model4} selected={selected4} onSelect={setSelected4} /></LabModel>
           </div>
