@@ -1024,6 +1024,20 @@ export function RegionStackMap({
       ctx.restore();
     });
 
+    baseWorldPoints.forEach((point, clanId) => {
+      if (!compact && clanId !== selected) return;
+      const projected = project(point);
+      const label = compact ? `CLAN ${key(clans[clanId][0])}` : key(clans[clanId][0]);
+      ctx.save();
+      ctx.font = compact ? "700 11px 'IBM Plex Mono', monospace" : "700 9px 'IBM Plex Mono', monospace";
+      const width = ctx.measureText(label).width + 10;
+      ctx.fillStyle = "rgba(8, 27, 24, 0.9)";
+      ctx.fillRect(projected.x + 8, projected.y - 18, width, 16);
+      ctx.fillStyle = clanId === selected ? "#fff176" : "#d8f0dc";
+      ctx.fillText(label, projected.x + 13, projected.y - 6);
+      ctx.restore();
+    });
+
     ctx.save();
     ctx.fillStyle = "#fff4cb";
     ctx.font = "700 13px 'IBM Plex Mono', monospace";
@@ -1052,7 +1066,7 @@ export function RegionStackMap({
         nearestDistance = distance;
       }
     });
-    if (nearest >= 0 && nearestDistance < 24) setSelectedIndex(nearest);
+    if (nearest >= 0 && nearestDistance < (clans.length <= 6 ? 64 : 24)) setSelectedIndex(nearest);
   };
 
   const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
