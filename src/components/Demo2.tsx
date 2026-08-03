@@ -2,8 +2,10 @@ import { useMemo, useState } from "react";
 import {
   HOUSTON_872,
   allPerms,
+  buildLoopStructure,
   factorial,
   key,
+  loopWheelSets,
   pathToString,
   randomTour,
   rot,
@@ -12,7 +14,7 @@ import {
   weight,
 } from "../lib/perms";
 import { useStepper } from "../lib/anim";
-import { OverlapRoadMap, PermWorldMap, TopDownTspMap } from "./PixelMaps";
+import { OverlapRoadMap, PermWorldMap, RegionStackMap, TopDownTspMap } from "./PixelMaps";
 import { Btn, Note, Panel, PermChip, PermText, PlayBar, Str, Wide } from "./ui";
 import { CostLensLegend } from "./CostLens";
 
@@ -383,6 +385,8 @@ export function TourBuilder3() {
 /* ------------------------------------------------------------------ */
 
 const OPT4 = stringToPath(standardSuperperm(4), 4);
+const STRUCT4 = buildLoopStructure(4);
+const REGIONS4 = loopWheelSets(STRUCT4);
 
 export function TourViewer4() {
   const [order, setOrder] = useState<number[][]>(OPT4);
@@ -408,9 +412,6 @@ export function TourViewer4() {
           characters. The map arranges them into six clans of four — the <strong>1234</strong>,{" "}
           <strong>2314</strong>, <strong>3124</strong>, <strong>2134</strong>, <strong>1324</strong>,
           and <strong>3214</strong> clans — each sharing a rotation chain of cheap 1-cost moves.
-          Notice the first 3-cost jump: after the <strong>3124</strong> clan, both possible cost-2
-          destinations, <strong>1234</strong> and <strong>1243</strong>, have already been visited, so
-          the next unvisited clan begins with only a one-symbol overlap.
           Watch the traveller walk the optimal route, then watch a random route waste characters
           at almost every step.
         </Note>
@@ -461,8 +462,24 @@ export function TourViewer4() {
   );
 }
 
+export function RegionFederationDemo4() {
+  return (
+    <Panel label="Demo 8 · overlapping 2-loop federations" className="space-y-4">
+      <Note>
+        Notice the first 3-cost jump: after the <strong>3124</strong> clan, both possible cost-2
+        destinations, <strong>1234</strong> and <strong>1243</strong>, have already been visited, so
+        the next unvisited clan begins with only a one-symbol overlap.
+        A useful analogy for a 2-loop region is a <strong>federation</strong>: it gathers{" "}
+        {REGIONS4[0]?.length ?? 0} clans linked by kick jumps, but it is not itself a clan. A clan
+        can belong to several federations, which is why their boundaries overlap.
+      </Note>
+      <RegionStackMap clans={STRUCT4.wheels} regions={REGIONS4} />
+    </Panel>
+  );
+}
+
 /* ------------------------------------------------------------------ */
-/*  Demo 8 · the checker                                               */
+/*  Checker                                                             */
 /* ------------------------------------------------------------------ */
 
 export function Verifier() {

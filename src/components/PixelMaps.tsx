@@ -397,18 +397,17 @@ function VillageFields({ n, villageLayout }: { n: 2 | 3 | 4; villageLayout: bool
   );
 }
 
-function ClanCoat({ clan, at, showLabel = true }: { clan: Perm; at: Point; showLabel?: boolean }) {
+function ClanCoat({ clan, at, showLabel = true, scale = 0.82 }: { clan: Perm; at: Point; showLabel?: boolean; scale?: number }) {
   const orbitRadius = clan.length === 3 ? 14 : clan.length === 4 ? 12 : 16;
   const markerId = `clan-arrow-${key(clan)}`;
   const direction = clan.length === 4 ? -1 : 1;
-  const coatScale = 0.82;
   const points = clan.map((_, i) => {
     const angle = -Math.PI / 2 + (direction * i * Math.PI * 2) / clan.length;
     return { x: Math.cos(angle) * orbitRadius, y: Math.sin(angle) * orbitRadius };
   });
 
   return (
-    <g transform={`translate(${at.x} ${at.y}) scale(${coatScale})`} aria-hidden="true">
+    <g transform={`translate(${at.x} ${at.y}) scale(${scale})`} aria-hidden="true">
       <defs>
         <marker id={markerId} viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
           <path d="M0 0 L8 4 L0 8 Z" fill="#b23a48" />
@@ -822,9 +821,10 @@ export function PermWorldMap({
 
 const REGION_STACK_COLORS = ["#e8615d", "#f0aa4f", "#f4d35e", "#65c5a2", "#4fb3c9", "#7d6fd6"];
 
-function regionStackPoint(index: number): Point {
-  const col = index % 12;
-  const row = Math.floor(index / 12);
+function regionStackPoint(index: number, cols: number): Point {
+  const col = index % cols;
+  const row = Math.floor(index / cols);
+  if (cols === 3) return { x: 120 + col * 250 + row * 45, y: 350 + row * 65 - col * 24 };
   return { x: 70 + col * 52 + row * 18, y: 330 + row * 11 - col * 4 };
 }
 
@@ -864,7 +864,8 @@ export function RegionStackMap({
   regions: number[][];
   selectedClanKey?: string;
 }) {
-  const basePoints = useMemo(() => clans.map((_, i) => regionStackPoint(i)), [clans]);
+  const cols = clans.length <= 6 ? 3 : 12;
+  const basePoints = useMemo(() => clans.map((_, i) => regionStackPoint(i, cols)), [clans, cols]);
   const regionsForClan = useMemo(() => {
     const memberships = Array.from({ length: clans.length }, () => [] as number[]);
     regions.forEach((memberIds, regionId) => {
@@ -885,25 +886,24 @@ export function RegionStackMap({
   const selected = Math.min(selectedIndex, clans.length - 1);
   const selectedLabel = key(clans[selected]?.[0] ?? []);
   const selectedRegionIds = regionsForClan[selected] ?? [];
-  const cols = 12;
   const rows = Math.ceil(clans.length / cols);
   const ground = [basePoints[0], basePoints[cols - 1], basePoints[clans.length - 1], basePoints[clans.length - cols]];
 
   return (
     <MapFrame
-      title="Overworld · six-region stack"
+      title={`Overworld · ${selectedRegionIds.length}-region stack`}
       w={900}
       h={540}
       subtitle={`${selectedLabel} clan · member of ${selectedRegionIds.length} regions`}
       footer={
         <div className="flex flex-wrap justify-between gap-2">
-          <span>base plane = 120 clans</span>
+          <span>base plane = {clans.length} clans</span>
           <span>raised planes = the selected clan's regions</span>
-          <span>click any clan to inspect its six memberships</span>
+          <span>click any clan to inspect its memberships</span>
         </div>
       }
     >
-      <svg viewBox="0 0 900 540" role="img" aria-label={`three-dimensional region view for clan ${selectedLabel}`}>
+      <svg viewBox="0 0 900 540" role="img" aria-label={`three-dimensional view of ${selectedRegionIds.length} regions containing clan ${selectedLabel}`}>
         <TileField w={900} h={540} dense />
         <polygon points={ground.map((point) => `${point.x},${point.y}`).join(" ")} fill="#173e2d" stroke="#65c5a2" strokeWidth="3" opacity="0.9" />
         {Array.from({ length: rows }, (_, row) => {
@@ -964,7 +964,7 @@ export function RegionStackMap({
           );
         })}
         <text x="38" y="42" fontFamily="IBM Plex Mono, monospace" fontSize="13" fontWeight="700" fill="#fff4cb">
-          six overlapping region boundaries for {selectedLabel}
+          {selectedRegionIds.length} overlapping region boundaries for {selectedLabel}
         </text>
       </svg>
     </MapFrame>
@@ -1057,7 +1057,7 @@ export function RotationVillageMap({
     >
       <svg viewBox={`0 0 ${MAP_W} ${MAP_H}`} role="img" aria-label="rotation wheel drawn as a clan">
         <TileField w={MAP_W} h={MAP_H} />
-        <ClanCoat clan={clan} at={center} showLabel={false} />
+        <ClanCoat clan={clan} at={center} showLabel={false} scale={1} />
         {points.map((p, i) => (
           <Road key={i} from={p} to={points[(i + 1) % points.length]} cost={1} />
         ))}

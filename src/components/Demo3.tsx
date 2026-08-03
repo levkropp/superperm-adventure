@@ -367,12 +367,13 @@ export function LoopExplorer() {
   const gens = STRUCT.gensOfLoop[loopId];
   return (
     <DemoErrorBoundary title="2-Loop Explorer Error">
-      <Panel label="Demo 11 · 2-loop region (30 houses in 5 clans)" className="space-y-4">
+      <Panel label="Demo 11 · review: 2-loop region at n = 6 (30 houses in 5 clans)" className="space-y-4">
         <Note>
-          Clans are joined into circuits. Lap a clan, take a <strong>kick bridge</strong> (cost 2),
-          and you land in a new clan. Five kicks bring you home, touring 30 permutations in a{" "}
-          <strong>2-loop region</strong>. There are 144 such regions in the world. Switch to the
-          overworld to lift the six regions containing the selected clan above a shared map.
+          Review the idea at <TeX>n = 6</TeX>. We first met 2-loop regions at <TeX>n = 4</TeX>:
+          clans are joined into circuits, and a kick bridge (cost 2) takes you from one clan to the
+          next. Five kicks bring you home, touring 30 permutations in a <strong>2-loop region</strong>.
+          There are 144 such regions in the world. Switch to the overworld to lift the six regions
+          containing the selected clan above a shared map.
         </Note>
 
         <div className="flex flex-wrap items-center gap-2">

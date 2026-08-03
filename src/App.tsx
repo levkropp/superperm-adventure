@@ -1,6 +1,6 @@
 import { Footer, Hero } from "./components/Chrome";
 import { N3Explorer } from "./components/Demo1";
-import { OverlapSlider, TourBuilder3, TourViewer4 } from "./components/Demo2";
+import { OverlapSlider, RegionFederationDemo4, TourBuilder3, TourViewer4 } from "./components/Demo2";
 import { SlidingWindowDemo } from "./components/Slider";
 import {
   ArcDemo,
@@ -191,6 +191,12 @@ export default function App() {
         <Wide>
           <DemoErrorBoundary title="Demo 7 Error">
             <TourViewer4 />
+          </DemoErrorBoundary>
+        </Wide>
+
+        <Wide>
+          <DemoErrorBoundary title="2-loop federation demo error">
+            <RegionFederationDemo4 />
           </DemoErrorBoundary>
         </Wide>
       </Section>
