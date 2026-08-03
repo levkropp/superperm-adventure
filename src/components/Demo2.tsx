@@ -295,10 +295,11 @@ export function TourBuilder3() {
       <Note>
         Any ordering of the six permutations, chained with maximum overlap, is a valid
         superpermutation. So the only question left is <em>which ordering is cheapest</em>.
-        The permutations can be arranged into two groups of three that share a{" "}
+        The permutations can be arranged into two clans of three: the <strong>123 clan</strong>
+        and the <strong>213 clan</strong>. Each clan shares a{" "}
         <strong>rotation chain</strong> (which we will refer to as an <strong>arc</strong> later)
         of cheap 1-cost moves. At the end of a rotation chain, only one of the three options in
-        the other group has a cost of 2; the rest have a cost of 3.
+        the other clan has a cost of 2; the rest have a cost of 3.
         Press “watch the optimal tour” to see the traveller walk it, or click towns on the
         map to build your own. Once a town is selected, the faint spokes are a <strong>cost
         lens</strong>: each spoke goes to one possible next town and carries the exact number of
@@ -417,12 +418,15 @@ export function TourViewer4() {
   };
 
   return (
-    <Panel label="Demo 7 · the same game with 24 towns" className="space-y-4">
-      <Note>
-        At n = 4 there are 24 permutations and the shortest superpermutation has 33
-        characters. Watch the traveller walk the optimal route and the string assemble
-        underneath, then watch a random route waste characters at almost every step.
-      </Note>
+      <Panel label="Demo 7 · the same game with 24 towns" className="space-y-4">
+        <Note>
+          At n = 4 there are 24 permutations and the shortest superpermutation has 33
+          characters. The map arranges them into six clans of four — the <strong>1234</strong>,{" "}
+          <strong>2314</strong>, <strong>3124</strong>, <strong>2134</strong>, <strong>1324</strong>,
+          and <strong>3214</strong> clans — each sharing a rotation chain of cheap 1-cost moves.
+          Watch the traveller walk the optimal route and the string assemble underneath, then
+          watch a random route waste characters at almost every step.
+        </Note>
 
       <div className="flex flex-wrap gap-2">
         <Btn onClick={() => load(OPT4, false)}>watch the optimal route</Btn>

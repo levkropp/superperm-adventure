@@ -290,17 +290,17 @@ const N3_POINTS: Point[] = [
 ];
 
 const N3_VILLAGE_POINTS: Point[] = [
-  { x: 90, y: 170 },
-  { x: 130, y: 170 },
-  { x: 170, y: 170 },
-  { x: 470, y: 170 },
-  { x: 510, y: 170 },
-  { x: 550, y: 170 },
+  { x: 70, y: 195 },
+  { x: 130, y: 155 },
+  { x: 190, y: 195 },
+  { x: 450, y: 195 },
+  { x: 510, y: 155 },
+  { x: 570, y: 195 },
 ];
 
 const N4_VILLAGE_POINTS: Point[] = [
-  ...[105, 320, 535].flatMap((x) => [-63, -21, 21, 63].map((offset) => ({ x: x + offset, y: 100 }))),
-  ...[105, 320, 535].flatMap((x) => [-63, -21, 21, 63].map((offset) => ({ x: x + offset, y: 240 }))),
+  ...[105, 320, 535].flatMap((x) => [-75, -25, 25, 75].map((offset, i) => ({ x: x + offset, y: i === 0 || i === 3 ? 115 : 90 }))),
+  ...[105, 320, 535].flatMap((x) => [-75, -25, 25, 75].map((offset, i) => ({ x: x + offset, y: i === 0 || i === 3 ? 265 : 240 }))),
 ];
 
 const N3_VILLAGE_ORDER: Perm[] = [
@@ -370,12 +370,12 @@ function VillageFields({ n, villageLayout }: { n: 2 | 3 | 4; villageLayout: bool
   const fields =
     n === 3
       ? [
-          { x: 48, y: 100, w: 145, h: 140 },
-          { x: 397, y: 100, w: 145, h: 140 },
+          { x: 35, y: 115, w: 190, h: 125 },
+          { x: 415, y: 115, w: 190, h: 125 },
         ]
       : [
-          ...[105, 320, 535].map((x) => ({ x: x - 85, y: 50, w: 170, h: 110 })),
-          ...[105, 320, 535].map((x) => ({ x: x - 85, y: 190, w: 170, h: 110 })),
+          ...[105, 320, 535].map((x) => ({ x: x - 100, y: 55, w: 200, h: 100 })),
+          ...[105, 320, 535].map((x) => ({ x: x - 100, y: 205, w: 200, h: 100 })),
         ];
 
   return (
@@ -392,6 +392,98 @@ function VillageFields({ n, villageLayout }: { n: 2 | 3 | 4; villageLayout: bool
           strokeWidth="2"
           strokeDasharray="7 6"
         />
+      ))}
+    </g>
+  );
+}
+
+function ClanCoat({ clan, at }: { clan: Perm; at: Point }) {
+  const orbitRadius = clan.length === 3 ? 14 : 12;
+  const markerId = `clan-arrow-${key(clan)}`;
+  const points = clan.map((_, i) => {
+    const angle = -Math.PI / 2 + (i * Math.PI * 2) / clan.length;
+    return { x: Math.cos(angle) * orbitRadius, y: Math.sin(angle) * orbitRadius };
+  });
+
+  return (
+    <g transform={`translate(${at.x} ${at.y})`} aria-hidden="true">
+      <defs>
+        <marker id={markerId} viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M0 0 L8 4 L0 8 Z" fill="#b23a48" />
+        </marker>
+      </defs>
+      <text
+        x="0"
+        y={clan.length === 3 ? -37 : -30}
+        textAnchor="middle"
+        fontFamily="IBM Plex Mono, monospace"
+        fontSize={clan.length === 3 ? 10 : 8}
+        fontWeight="700"
+        fill="#fff4cb"
+      >
+        the {key(clan)} clan
+      </text>
+      <path
+        d={clan.length === 3 ? "M-27-25 H27 V-5 Q27 21 0 32 Q-27 21-27-5 Z" : "M-24-22 H24 V-4 Q24 18 0 28 Q-24 18-24-4 Z"}
+        fill="#fff2cd"
+        stroke="#081b18"
+        strokeWidth="3"
+      />
+      <circle r={orbitRadius + 5} fill="none" stroke="#5b3fbf" strokeWidth="2" />
+      {points.map((point, i) => {
+        const next = points[(i + 1) % points.length];
+        return (
+          <line
+            key={`edge-${i}`}
+            x1={point.x}
+            y1={point.y}
+            x2={next.x}
+            y2={next.y}
+            stroke="#b23a48"
+            strokeWidth="2"
+            markerEnd={`url(#${markerId})`}
+          />
+        );
+      })}
+      {points.map((point, i) => (
+        <g key={`digit-${i}`}>
+          <circle cx={point.x} cy={point.y} r={clan.length === 3 ? 5 : 4.5} fill="#5b3fbf" stroke="#081b18" strokeWidth="1.5" />
+          <text
+            x={point.x}
+            y={point.y + 3}
+            textAnchor="middle"
+            fontFamily="IBM Plex Mono, monospace"
+            fontSize={clan.length === 3 ? 8 : 7}
+            fontWeight="700"
+            fill="#fff4cb"
+          >
+            {clan[i]}
+          </text>
+        </g>
+      ))}
+    </g>
+  );
+}
+
+function ClanCoats({ n, villageLayout }: { n: 2 | 3 | 4; villageLayout: boolean }) {
+  if (n === 2 || !villageLayout) return null;
+  const order = n === 3 ? N3_VILLAGE_ORDER : N4_VILLAGE_ORDER;
+  const size = n;
+  const centers =
+    n === 3
+      ? [
+          { x: 130, y: 62 },
+          { x: 510, y: 62 },
+        ]
+      : [
+          ...[105, 320, 535].map((x) => ({ x, y: 45 })),
+          ...[105, 320, 535].map((x) => ({ x, y: 188 })),
+        ];
+
+  return (
+    <g>
+      {centers.map((at, i) => (
+        <ClanCoat key={i} clan={order[i * size]} at={at} />
       ))}
     </g>
   );
@@ -458,6 +550,7 @@ export function TopDownTspMap({
       <svg viewBox={`0 0 ${MAP_W} ${MAP_H}`} role="img" aria-label={`top-down map for n = ${n}`}>
         <TileField w={MAP_W} h={MAP_H} dense={n === 4} />
         <VillageFields n={n} villageLayout={villageLayout} />
+        <ClanCoats n={n} villageLayout={villageLayout} />
         {active && showLens &&
           perms
             .filter((p) => key(p) !== activeKey)
