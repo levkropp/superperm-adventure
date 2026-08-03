@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { buildLoopStructure, key, loopWheelSets, Perm } from "../lib/perms";
-import { RegionStackMap } from "./PixelMaps";
+import { ClanCoat, House } from "./PixelMaps";
 
 type RegionModel = {
   n: number;
@@ -87,51 +87,111 @@ function ExplodedFederations({ model, selected }: { model: RegionModel; selected
   );
 }
 
-function IncidenceWeb({ model, selected }: { model: RegionModel; selected: number }) {
+type Lab3DPoint = { x: number; y: number; z: number };
+
+const N4_BASE: Lab3DPoint[] = [
+  { x: -4, y: -2, z: 0 },
+  { x: 0, y: -2.6, z: 0 },
+  { x: 4, y: -2, z: 0 },
+  { x: -3.4, y: 1.8, z: 0 },
+  { x: 0, y: 1.2, z: 0 },
+  { x: 3.4, y: 1.8, z: 0 },
+];
+
+function projectLabPoint(point: Lab3DPoint, yaw: number, pitch: number, scale = 54) {
+  const cosYaw = Math.cos(yaw);
+  const sinYaw = Math.sin(yaw);
+  const cosPitch = Math.cos(pitch);
+  const sinPitch = Math.sin(pitch);
+  const x = point.x * cosYaw - point.y * sinYaw;
+  const depth = point.x * sinYaw + point.y * cosYaw;
+  const vertical = point.z * cosPitch - depth * sinPitch;
+  return { x: 450 + x * scale, y: 255 - vertical * scale, depth: point.z * sinPitch + depth * cosPitch };
+}
+
+function N4FederationView({ model, selected, onSelect }: { model: RegionModel; selected: number; onSelect: (id: number) => void }) {
+  const [camera, setCamera] = useState({ yaw: -0.55, pitch: 0.65 });
+  const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  const suppressClick = useRef(false);
   const regionIds = model.memberships[selected];
-  const width = 640;
-  const height = model.n === 4 ? 260 : 340;
-  const center = { x: width / 2, y: height / 2 };
-  const radius = model.n === 4 ? 70 : 105;
-  const regionPoints = regionIds.map((_, i) => {
-    const angle = -Math.PI / 2 + (i * Math.PI * 2) / regionIds.length;
-    return { x: center.x + Math.cos(angle) * radius, y: center.y + Math.sin(angle) * radius };
-  });
+  const offsets = [{ x: -14, y: 12 }, { x: 14, y: 12 }, { x: -14, y: 36 }, { x: 14, y: 36 }];
+
+  const handleDown = (event: React.PointerEvent<SVGSVGElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    suppressClick.current = false;
+    drag.current = { x: event.clientX, y: event.clientY, moved: false };
+  };
+  const handleMove = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (!drag.current) return;
+    const dx = event.clientX - drag.current.x;
+    const dy = event.clientY - drag.current.y;
+    if (Math.abs(dx) + Math.abs(dy) > 3) drag.current.moved = true;
+    drag.current.x = event.clientX;
+    drag.current.y = event.clientY;
+    setCamera((previous) => ({
+      yaw: previous.yaw + dx * 0.012,
+      pitch: Math.max(-1.1, Math.min(1.1, previous.pitch + dy * 0.012)),
+    }));
+  };
+  const handleUp = (event: React.PointerEvent<SVGSVGElement>) => {
+    suppressClick.current = drag.current?.moved ?? false;
+    drag.current = null;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    window.setTimeout(() => {
+      suppressClick.current = false;
+    }, 0);
+  };
+
+  const projectedBase = N4_BASE.map((point) => projectLabPoint(point, camera.yaw, camera.pitch));
+  const ground = [projectedBase[0], projectedBase[2], projectedBase[5], projectedBase[3]];
 
   return (
     <div>
       <ModelTag model={model} selected={selected} />
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full border-3 border-ink bg-[#10231f]" role="img" aria-label="clan and federation incidence web">
-        {regionIds.map((regionId, i) => {
-          const regionPoint = regionPoints[i];
-          const members = model.regions[regionId].filter((clanId) => clanId !== selected);
+      <svg
+        viewBox="0 0 900 520"
+        className="w-full touch-none cursor-grab border-3 border-ink bg-[#10231f] active:cursor-grabbing"
+        role="img"
+        aria-label="draggable three-dimensional n equals 4 federation view"
+        onPointerDown={handleDown}
+        onPointerMove={handleMove}
+        onPointerUp={handleUp}
+        onPointerCancel={handleUp}
+      >
+        <rect width="900" height="520" fill="#10231f" />
+        <polygon points={ground.map((point) => `${point.x},${point.y}`).join(" ")} fill="#173e2d" stroke="#65c5a2" strokeWidth="3" />
+        {regionIds.map((regionId, layer) => {
+          const height = 1.3 + layer * 1.5;
+          const memberIds = model.regions[regionId];
+          const lifted = memberIds.map((clanId) => projectLabPoint({ ...N4_BASE[clanId], z: height }, camera.yaw, camera.pitch));
+          const base = memberIds.map((clanId) => projectedBase[clanId]);
+          const color = layer === 0 ? "#65c5a2" : "#f0aa4f";
+          const center = lifted.reduce((sum, point) => ({ x: sum.x + point.x / lifted.length, y: sum.y + point.y / lifted.length }), { x: 0, y: 0 });
           return (
             <g key={regionId}>
-              <line x1={center.x} y1={center.y} x2={regionPoint.x} y2={regionPoint.y} stroke="#f4d35e" strokeWidth="2" />
-              {members.map((clanId, j) => {
-                const angle = -Math.PI / 2 + (j * Math.PI * 2) / members.length;
-                const point = { x: regionPoint.x + Math.cos(angle) * 32, y: regionPoint.y + Math.sin(angle) * 32 };
-                return (
-                  <g key={`${regionId}-${clanId}`}>
-                    <line x1={regionPoint.x} y1={regionPoint.y} x2={point.x} y2={point.y} stroke="#65c5a2" strokeWidth="1.5" opacity="0.8" />
-                    <circle cx={point.x} cy={point.y} r="12" fill="#286f75" stroke="#65c5a2" strokeWidth="2" />
-                    <text x={point.x} y={point.y + 3} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="7" fontWeight="700" fill="#fff4cb">
-                      {clanLabel(model.clans, clanId)}
-                    </text>
-                  </g>
-                );
-              })}
-              <circle cx={regionPoint.x} cy={regionPoint.y} r="16" fill="#b23a48" stroke="#fff4cb" strokeWidth="2" />
-              <text x={regionPoint.x} y={regionPoint.y + 4} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="9" fontWeight="700" fill="#fff4cb">
-                R{regionId + 1}
-              </text>
+              {base.map((point, i) => (
+                <line key={i} x1={point.x} y1={point.y} x2={lifted[i].x} y2={lifted[i].y} stroke={color} strokeWidth={memberIds[i] === selected ? 4 : 2} opacity="0.7" />
+              ))}
+              <polygon points={lifted.map((point) => `${point.x},${point.y}`).join(" ")} fill={color} fillOpacity="0.2" stroke={color} strokeWidth="3" strokeDasharray="8 5" />
+              {lifted.map((point, i) => (
+                <circle key={i} cx={point.x} cy={point.y} r={memberIds[i] === selected ? 8 : 5} fill={memberIds[i] === selected ? "#fff176" : color} stroke="#081b18" strokeWidth="2" />
+              ))}
+              <text x={center.x + 10} y={center.y - 6} fontFamily="IBM Plex Mono, monospace" fontSize="13" fontWeight="700" fill={color}>R{regionId + 1}</text>
             </g>
           );
         })}
-        <circle cx={center.x} cy={center.y} r="28" fill="#fff176" stroke="#081b18" strokeWidth="4" />
-        <text x={center.x} y={center.y + 4} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="11" fontWeight="700" fill="#1d1e33">
-          {clanLabel(model.clans, selected)}
-        </text>
+        <line x1={projectedBase[selected].x} y1={projectedBase[selected].y} x2={450} y2={255} stroke="#fff176" strokeWidth="2" strokeDasharray="5 4" opacity="0.7" />
+        {model.clans.map((clan, clanId) => {
+          const point = projectedBase[clanId];
+          return (
+            <g key={clanId} transform={`translate(${point.x} ${point.y})`} onClick={() => !suppressClick.current && onSelect(clanId)} className="cursor-pointer">
+              {clan.map((permutation, i) => <House key={key(permutation)} p={permutation} at={offsets[i]} size="sm" state={clanId === selected ? "current" : "unvisited"} />)}
+              <ClanCoat clan={clan[0]} at={{ x: 0, y: -32 }} scale={0.55} />
+            </g>
+          );
+        })}
+        <text x="24" y="30" fontFamily="IBM Plex Mono, monospace" fontSize="13" fontWeight="700" fill="#fff4cb">drag to orbit · click a labeled clan</text>
+        <text x="24" y="50" fontFamily="IBM Plex Mono, monospace" fontSize="11" fill="#a3d9b1">two raised federation planes · each contains three clans</text>
       </svg>
     </div>
   );
@@ -220,7 +280,7 @@ export default function RegionLab() {
           <div className="font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-accent">Visualization lab</div>
           <h1 className="mt-2 font-serif text-4xl font-semibold sm:text-6xl">How should a 2-loop region look?</h1>
           <p className="mt-4 max-w-3xl text-lg leading-relaxed text-ink-soft">
-            Choose a clan in each column, then compare five ways to show the same overlapping-region data.
+            Choose a clan in each column, then compare four ways to show the same overlapping-region data.
             The main article is unchanged while this side lab is open at <code>?lab=regions</code>.
           </p>
         </header>
@@ -230,9 +290,10 @@ export default function RegionLab() {
           <LabModel model={model6} selected={selected6} onSelect={setSelected6}><ExplodedFederations model={model6} selected={selected6} /></LabModel>
         </LabCard>
 
-        <LabCard title="2. Incidence web" description="The center is one clan, the red nodes are its regions, and the outer nodes are the other clans each region contains.">
-          <LabModel model={model4} selected={selected4} onSelect={setSelected4}><IncidenceWeb model={model4} selected={selected4} /></LabModel>
-          <LabModel model={model6} selected={selected6} onSelect={setSelected6}><IncidenceWeb model={model6} selected={selected6} /></LabModel>
+        <LabCard title="2. Incidence web + draggable 3D · n = 4" description="Each house cluster is a clan. The two raised triangles are federations, and the selected clan is connected to both of them.">
+          <div className="lg:col-span-2">
+            <LabModel model={model4} selected={selected4} onSelect={setSelected4}><N4FederationView model={model4} selected={selected4} onSelect={setSelected4} /></LabModel>
+          </div>
         </LabCard>
 
         <LabCard title="3. Membership matrix" description="A row is a region and a column is a clan. A dot means that region contains that clan.">
@@ -245,10 +306,6 @@ export default function RegionLab() {
           <LabModel model={model6} selected={selected6} onSelect={setSelected6}><ClanRows model={model6} selected={selected6} /></LabModel>
         </LabCard>
 
-        <LabCard title="5. Draggable 3D stack" description="The selected clan stays on the base plane while each containing region rises above it as a separate plane.">
-          <LabModel model={model4} selected={selected4} onSelect={setSelected4}><RegionStackMap clans={model4.clans} regions={model4.regions} selectedClanKey={clanLabel(model4.clans, selected4)} /></LabModel>
-          <LabModel model={model6} selected={selected6} onSelect={setSelected6}><RegionStackMap clans={model6.clans} regions={model6.regions} selectedClanKey={clanLabel(model6.clans, selected6)} /></LabModel>
-        </LabCard>
       </div>
     </main>
   );

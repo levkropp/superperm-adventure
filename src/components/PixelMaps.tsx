@@ -64,7 +64,7 @@ function Player({ at, scale = 1 }: { at: Point; scale?: number }) {
 }
 
 /** One house = one permutation. Always. */
-function House({
+export function House({
   p,
   at,
   state,
@@ -397,7 +397,7 @@ function VillageFields({ n, villageLayout }: { n: 2 | 3 | 4; villageLayout: bool
   );
 }
 
-function ClanCoat({ clan, at, showLabel = true, scale = 0.82 }: { clan: Perm; at: Point; showLabel?: boolean; scale?: number }) {
+export function ClanCoat({ clan, at, showLabel = true, scale = 0.82 }: { clan: Perm; at: Point; showLabel?: boolean; scale?: number }) {
   const orbitRadius = clan.length === 3 ? 14 : clan.length === 4 ? 12 : 16;
   const markerId = `clan-arrow-${key(clan)}`;
   const direction = clan.length === 4 ? -1 : 1;
