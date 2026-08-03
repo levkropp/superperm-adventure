@@ -40,18 +40,15 @@ const HOUSTON_PATH = stringToPath(HOUSTON_872.split(""), 6);
 /* ------------------------------------------------------------------ */
 
 export function WheelViz() {
-  const [sel, setSel] = useState<number[]>([1, 2, 3, 4, 5, 6]);
-  const wheel = useMemo(() => wheelOfPerm(sel), [sel]);
+  const wheel = useMemo(() => wheelOfPerm([1, 2, 3, 4, 5, 6]), []);
 
   return (
     <DemoErrorBoundary title="Rotation Clan Demo Error">
       <div className="space-y-4">
         <RotationVillageMap
           wheel={wheel}
-          selected={sel}
-          onSelect={setSel}
+          selected={wheel[0]}
           title="Rotation clan"
-          subtitle="click a house to re-centre"
         />
 
       </div>

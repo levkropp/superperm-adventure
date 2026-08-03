@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { allPerms, key, Perm, weight, wheelOfPerm } from "../lib/perms";
 
 type Point = { x: number; y: number };
@@ -821,11 +821,13 @@ export function PermWorldMap({
 
 const REGION_STACK_COLORS = ["#e8615d", "#f0aa4f", "#f4d35e", "#65c5a2", "#4fb3c9", "#7d6fd6"];
 
-function regionStackPoint(index: number, cols: number): Point {
+type WorldPoint = Point & { z: number };
+
+function regionWorldPoint(index: number, cols: number): WorldPoint {
   const col = index % cols;
   const row = Math.floor(index / cols);
-  if (cols === 3) return { x: 120 + col * 250 + row * 45, y: 350 + row * 65 - col * 24 };
-  return { x: 70 + col * 52 + row * 18, y: 330 + row * 11 - col * 4 };
+  if (cols === 3) return { x: (col - 1) * 4 + row * 0.8, y: (row - 0.5) * 3 - col * 0.6, z: 0 };
+  return { x: (col - 5.5) * 2.6 + row * 0.65, y: (row - 4.5) * 2 - col * 0.4, z: 0 };
 }
 
 function cross(o: Point, a: Point, b: Point) {
@@ -851,8 +853,32 @@ function convexHull(points: Point[]): Point[] {
   return [...lower.slice(0, -1), ...upper.slice(0, -1)];
 }
 
-function liftPoint(point: Point, height: number): Point {
-  return { x: point.x + height * 0.42, y: point.y - height };
+function worldHull(points: WorldPoint[]): WorldPoint[] {
+  const hull = convexHull(points);
+  return hull.map((point) => points.find((candidate) => candidate.x === point.x && candidate.y === point.y) ?? { ...point, z: 0 });
+}
+
+interface Camera3d {
+  yaw: number;
+  pitch: number;
+  zoom: number;
+}
+
+function projectWorld(point: WorldPoint, camera: Camera3d, width: number, height: number, scale: number) {
+  const cosYaw = Math.cos(camera.yaw);
+  const sinYaw = Math.sin(camera.yaw);
+  const cosPitch = Math.cos(camera.pitch);
+  const sinPitch = Math.sin(camera.pitch);
+  const rotatedX = point.x * cosYaw - point.y * sinYaw;
+  const depth = point.x * sinYaw + point.y * cosYaw;
+  const vertical = point.z * cosPitch - depth * sinPitch;
+  const cameraDepth = point.z * sinPitch + depth * cosPitch;
+  const perspective = 1 / (1 + cameraDepth * 0.012);
+  return {
+    x: width / 2 + rotatedX * scale * perspective,
+    y: height / 2 - vertical * scale * perspective,
+    depth: cameraDepth,
+  };
 }
 
 export function RegionStackMap({
@@ -865,7 +891,7 @@ export function RegionStackMap({
   selectedClanKey?: string;
 }) {
   const cols = clans.length <= 6 ? 3 : 12;
-  const basePoints = useMemo(() => clans.map((_, i) => regionStackPoint(i, cols)), [clans, cols]);
+  const baseWorldPoints = useMemo(() => clans.map((_, i) => regionWorldPoint(i, cols)), [clans, cols]);
   const regionsForClan = useMemo(() => {
     const memberships = Array.from({ length: clans.length }, () => [] as number[]);
     regions.forEach((memberIds, regionId) => {
@@ -876,6 +902,9 @@ export function RegionStackMap({
   const findClan = (target?: string) => clans.findIndex((clan) => clan.some((permutation) => key(permutation) === target));
   const initialSelected = Math.max(0, findClan(selectedClanKey));
   const [selectedIndex, setSelectedIndex] = useState(initialSelected);
+  const [camera, setCamera] = useState<Camera3d>({ yaw: -0.55, pitch: 0.62, zoom: 1 });
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const dragRef = useRef<{ id: number; x: number; y: number; moved: boolean } | null>(null);
 
   useEffect(() => {
     if (selectedClanKey === undefined) return;
@@ -886,8 +915,171 @@ export function RegionStackMap({
   const selected = Math.min(selectedIndex, clans.length - 1);
   const selectedLabel = key(clans[selected]?.[0] ?? []);
   const selectedRegionIds = regionsForClan[selected] ?? [];
-  const rows = Math.ceil(clans.length / cols);
-  const ground = [basePoints[0], basePoints[cols - 1], basePoints[clans.length - 1], basePoints[clans.length - cols]];
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, rect.width, rect.height);
+
+    const compact = clans.length <= 6;
+    const scale = Math.min(
+      rect.width / (compact ? 10 : 34),
+      rect.height / (compact ? 8 : 27),
+    ) * camera.zoom;
+    const project = (point: WorldPoint) => projectWorld(point, camera, rect.width, rect.height, scale);
+    const line = (from: WorldPoint, to: WorldPoint, color: string, width: number, alpha = 1, dashed = false) => {
+      const a = project(from);
+      const b = project(to);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.setLineDash(dashed ? [7, 5] : []);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+      ctx.restore();
+    };
+    const polygon = (points: WorldPoint[], color: string, fillAlpha: number) => {
+      if (points.length < 3) return;
+      const projected = points.map(project);
+      ctx.save();
+      ctx.globalAlpha = fillAlpha;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(projected[0].x, projected[0].y);
+      projected.slice(1).forEach((point) => ctx.lineTo(point.x, point.y));
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 0.95;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([7, 5]);
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    polygon(worldHull(baseWorldPoints), "#65c5a2", 0.15);
+    const rows = Math.ceil(clans.length / cols);
+    for (let row = 0; row < rows; row++) {
+      const first = row * cols;
+      const last = Math.min(first + cols - 1, clans.length - 1);
+      line(baseWorldPoints[first], baseWorldPoints[last], "#65c5a2", 1, 0.25);
+    }
+    for (let col = 0; col < cols; col++) {
+      const first = col;
+      const last = Math.min(col + (rows - 1) * cols, clans.length - 1);
+      line(baseWorldPoints[first], baseWorldPoints[last], "#65c5a2", 1, 0.25);
+    }
+
+    baseWorldPoints.forEach((point, clanId) => {
+      const projected = project(point);
+      ctx.save();
+      ctx.fillStyle = clanId === selected ? "#fff176" : "#5c9270";
+      ctx.strokeStyle = "#081b18";
+      ctx.lineWidth = clanId === selected ? 3 : 1.5;
+      ctx.beginPath();
+      ctx.rect(projected.x - (clanId === selected ? 7 : 4), projected.y - 3, clanId === selected ? 14 : 8, 6);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    });
+
+    selectedRegionIds.forEach((regionId, layer) => {
+      const height = 1.2 + layer * 1.15;
+      const memberIds = regions[regionId] ?? [];
+      const elevated = memberIds.map((clanId) => ({ ...baseWorldPoints[clanId], z: height }));
+      const boundary = worldHull(elevated);
+      const color = REGION_STACK_COLORS[layer % REGION_STACK_COLORS.length];
+      memberIds.forEach((clanId) => {
+        line(baseWorldPoints[clanId], { ...baseWorldPoints[clanId], z: height }, color, clanId === selected ? 3.5 : 1.5, 0.6);
+      });
+      polygon(boundary, color, 0.18);
+      elevated.forEach((point, i) => {
+        const projected = project(point);
+        ctx.save();
+        ctx.fillStyle = memberIds[i] === selected ? "#fff176" : color;
+        ctx.strokeStyle = "#081b18";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(projected.x, projected.y, memberIds[i] === selected ? 6 : 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      });
+      const selectedPoint = project({ ...baseWorldPoints[selected], z: height });
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.font = "700 11px 'IBM Plex Mono', monospace";
+      ctx.fillText(`R${regionId + 1}`, selectedPoint.x + 10, selectedPoint.y - 5);
+      ctx.restore();
+    });
+
+    ctx.save();
+    ctx.fillStyle = "#fff4cb";
+    ctx.font = "700 13px 'IBM Plex Mono', monospace";
+    ctx.fillText(`${selectedRegionIds.length} overlapping region boundaries for ${selectedLabel}`, 24, 28);
+    ctx.font = "500 11px 'IBM Plex Mono', monospace";
+    ctx.fillStyle = "#a3d9b1";
+    ctx.fillText("drag to orbit · wheel to zoom · click a clan to inspect it", 24, 46);
+    ctx.restore();
+  }, [baseWorldPoints, clans.length, camera, regions, selected, selectedLabel, selectedRegionIds, cols]);
+
+  const pickClan = (clientX: number, clientY: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const compact = clans.length <= 6;
+    const scale = Math.min(rect.width / (compact ? 10 : 34), rect.height / (compact ? 8 : 27)) * camera.zoom;
+    let nearest = -1;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    baseWorldPoints.forEach((point, clanId) => {
+      const projected = projectWorld(point, camera, rect.width, rect.height, scale);
+      const dx = projected.x - (clientX - rect.left);
+      const dy = projected.y - (clientY - rect.top);
+      const distance = Math.hypot(dx, dy);
+      if (distance < nearestDistance) {
+        nearest = clanId;
+        nearestDistance = distance;
+      }
+    });
+    if (nearest >= 0 && nearestDistance < 24) setSelectedIndex(nearest);
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false };
+  };
+  const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.id !== event.pointerId) return;
+    const dx = event.clientX - drag.x;
+    const dy = event.clientY - drag.y;
+    if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+    drag.x = event.clientX;
+    drag.y = event.clientY;
+    setCamera((previous) => ({
+      ...previous,
+      yaw: previous.yaw + dx * 0.012,
+      pitch: Math.max(-1.15, Math.min(1.15, previous.pitch + dy * 0.012)),
+    }));
+  };
+  const handlePointerUp = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.id !== event.pointerId) return;
+    if (!drag.moved) pickClan(event.clientX, event.clientY);
+    dragRef.current = null;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+  };
 
   return (
     <MapFrame
@@ -903,70 +1095,20 @@ export function RegionStackMap({
         </div>
       }
     >
-      <svg viewBox="0 0 900 540" role="img" aria-label={`three-dimensional view of ${selectedRegionIds.length} regions containing clan ${selectedLabel}`}>
-        <TileField w={900} h={540} dense />
-        <polygon points={ground.map((point) => `${point.x},${point.y}`).join(" ")} fill="#173e2d" stroke="#65c5a2" strokeWidth="3" opacity="0.9" />
-        {Array.from({ length: rows }, (_, row) => {
-          const first = row * cols;
-          const last = Math.min(first + cols - 1, clans.length - 1);
-          return <line key={`row-${row}`} x1={basePoints[first].x} y1={basePoints[first].y} x2={basePoints[last].x} y2={basePoints[last].y} stroke="#65c5a2" strokeOpacity="0.22" strokeWidth="1" />;
-        })}
-        {Array.from({ length: cols }, (_, col) => {
-          const first = col;
-          const last = col + (rows - 1) * cols;
-          return <line key={`col-${col}`} x1={basePoints[first].x} y1={basePoints[first].y} x2={basePoints[Math.min(last, clans.length - 1)].x} y2={basePoints[Math.min(last, clans.length - 1)].y} stroke="#65c5a2" strokeOpacity="0.22" strokeWidth="1" />;
-        })}
-
-        {clans.map((clan, clanId) => {
-          const point = basePoints[clanId];
-          const active = clanId === selected;
-          return (
-            <g
-              key={clanId}
-              transform={`translate(${point.x} ${point.y})`}
-              role="button"
-              tabIndex={0}
-              aria-label={`select clan ${key(clan[0])}`}
-              onClick={() => setSelectedIndex(clanId)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") setSelectedIndex(clanId);
-              }}
-              className="cursor-pointer"
-            >
-              <title>{key(clan[0])} clan · {regionsForClan[clanId]?.length ?? 0} regions</title>
-              <rect x="-8" y="-5" width="16" height="10" fill={active ? "#fff176" : "#5c9270"} stroke="#081b18" strokeWidth={active ? 3 : 1.5} />
-            </g>
-          );
-        })}
-
-        {selectedRegionIds.map((regionId, layer) => {
-          const height = 38 + layer * 32;
-          const memberIds = regions[regionId] ?? [];
-          const elevated = memberIds.map((clanId) => liftPoint(basePoints[clanId], height));
-          const boundary = convexHull(elevated);
-          const color = REGION_STACK_COLORS[layer % REGION_STACK_COLORS.length];
-          const selectedPoint = liftPoint(basePoints[selected], height);
-          return (
-            <g key={regionId}>
-              {memberIds.map((clanId) => {
-                const base = basePoints[clanId];
-                const top = liftPoint(base, height);
-                return <line key={`stem-${clanId}`} x1={base.x} y1={base.y} x2={top.x} y2={top.y} stroke={color} strokeWidth={clanId === selected ? 4 : 2} strokeOpacity={0.55} />;
-              })}
-              <polygon points={boundary.map((point) => `${point.x},${point.y}`).join(" ")} fill={color} fillOpacity="0.18" stroke={color} strokeWidth="3" strokeDasharray="7 5" />
-              {elevated.map((point, i) => (
-                <circle key={`node-${i}`} cx={point.x} cy={point.y} r={memberIds[i] === selected ? 7 : 4} fill={memberIds[i] === selected ? "#fff176" : color} stroke="#081b18" strokeWidth="2" />
-              ))}
-              <text x={selectedPoint.x + 12} y={selectedPoint.y - 5} fontFamily="IBM Plex Mono, monospace" fontSize="11" fontWeight="700" fill={color}>
-                R{regionId + 1}
-              </text>
-            </g>
-          );
-        })}
-        <text x="38" y="42" fontFamily="IBM Plex Mono, monospace" fontSize="13" fontWeight="700" fill="#fff4cb">
-          {selectedRegionIds.length} overlapping region boundaries for {selectedLabel}
-        </text>
-      </svg>
+      <canvas
+        ref={canvasRef}
+        className="block h-full w-full touch-none cursor-grab active:cursor-grabbing"
+        role="img"
+        aria-label={`three-dimensional view of ${selectedRegionIds.length} regions containing clan ${selectedLabel}`}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onWheel={(event) => {
+          event.preventDefault();
+          setCamera((previous) => ({ ...previous, zoom: Math.max(0.65, Math.min(1.8, previous.zoom - event.deltaY * 0.001)) }));
+        }}
+      />
     </MapFrame>
   );
 }
@@ -1057,7 +1199,7 @@ export function RotationVillageMap({
     >
       <svg viewBox={`0 0 ${MAP_W} ${MAP_H}`} role="img" aria-label="rotation wheel drawn as a clan">
         <TileField w={MAP_W} h={MAP_H} />
-        <ClanCoat clan={clan} at={center} showLabel={false} scale={1} />
+        <ClanCoat clan={clan} at={center} showLabel={false} scale={2} />
         {points.map((p, i) => (
           <Road key={i} from={p} to={points[(i + 1) % points.length]} cost={1} />
         ))}
