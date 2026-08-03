@@ -16,12 +16,17 @@ import {
 import { Callout, P, Section, Wide } from "./components/ui";
 import TeX, { V, VarKey } from "./lib/tex";
 import { DemoErrorBoundary } from "./components/DemoErrorBoundary";
+import RegionLab from "./components/RegionLab";
 
 /* ------------------------------------------------------------------ */
 /*  The paper                                                          */
 /* ------------------------------------------------------------------ */
 
 export default function App() {
+  if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("lab") === "regions") {
+    return <RegionLab />;
+  }
+
   return (
     <div className="min-h-screen">
       <Hero />
