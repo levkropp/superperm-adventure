@@ -884,28 +884,51 @@ function projectWorld(point: WorldPoint, camera: Camera3d, width: number, height
 const FEDERATION_OVERWORLD_W = 1200;
 const FEDERATION_OVERWORLD_H = 780;
 
-function federationOverworldPoint(index: number, cols: number, top: number, stepX: number, stepY: number): Point {
+function federationOverworldPoint(index: number, cols: number, top: number, stepX: number, stepY: number, jitterX: number, jitterY: number): Point {
   const col = index % cols;
   const row = Math.floor(index / cols);
-  return { x: 78 + col * stepX, y: top + row * stepY };
+  return {
+    x: 78 + col * stepX + Math.sin(index * 1.73) * jitterX,
+    y: top + row * stepY + Math.cos(index * 1.37) * jitterY,
+  };
+}
+
+function FederationSatelliteGraphic({ point, regionId, color, selected, active, onSelect }: { point: Point; regionId: number; color: string; selected: boolean; active: boolean; onSelect: () => void }) {
+  return (
+    <g transform={`translate(${point.x} ${point.y}) scale(0.42)`} onClick={onSelect} className="cursor-pointer" opacity={active ? 1 : 0.32}>
+      <path d="M-19 13 L19 13 L13 -5 L-13 -5 Z" fill={selected ? "#fff176" : color} stroke={selected ? "#fff176" : color} strokeWidth="2" />
+      <path d="M-13 -5 L0 -22 L13 -5 Z" fill={color} stroke="#10231f" strokeWidth="1.5" />
+      <text x="0" y="9" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="8" fontWeight="700" fill={selected ? "#1d1e33" : "#fff4cb"}>F{regionId + 1}</text>
+      {active && <path d="M-29 -25 L29 -25" stroke={color} strokeWidth="2" opacity="0.8" />}
+    </g>
+  );
 }
 
 export function FederationOverworldMap({
   clans,
   regions,
   selectedClanKey,
+  federationIds,
+  collision,
+  title = "Federation archipelago overworld",
+  focusOnSelection = true,
 }: {
   clans: Perm[][];
   regions: number[][];
   selectedClanKey?: string;
+  federationIds?: number[];
+  collision?: { doubleBooked: number; stranded: number } | null;
+  title?: string;
+  focusOnSelection?: boolean;
 }) {
+  const visibleFederationIds = federationIds ?? regions.map((_, regionId) => regionId);
   const clanPoints = useMemo(
-    () => clans.map((_, index) => federationOverworldPoint(index, 12, 505, 95, 24)),
+    () => clans.map((_, index) => federationOverworldPoint(index, 12, 505, 95, 24, 25, 7)),
     [clans],
   );
   const satellitePoints = useMemo(
-    () => regions.map((_, index) => federationOverworldPoint(index, 12, 74, 95, 31)),
-    [regions],
+    () => visibleFederationIds.map((_, index) => federationOverworldPoint(index, visibleFederationIds.length <= 24 ? 8 : 12, 74, visibleFederationIds.length <= 24 ? 150 : 95, visibleFederationIds.length <= 24 ? 82 : 31, visibleFederationIds.length <= 24 ? 26 : 28, visibleFederationIds.length <= 24 ? 12 : 9)),
+    [visibleFederationIds],
   );
   const memberships = useMemo(() => {
     const result = Array.from({ length: clans.length }, () => [] as number[]);
@@ -916,20 +939,27 @@ export function FederationOverworldMap({
     () => Math.max(0, clans.findIndex((clan) => clan.some((permutation) => key(permutation) === selectedClanKey))),
     [clans, selectedClanKey],
   );
-  const [selectedClan, setSelectedClan] = useState(selectedFromKey);
+  const [selectedClan, setSelectedClan] = useState<number | null>(focusOnSelection ? selectedFromKey : null);
   const [selectedFederation, setSelectedFederation] = useState<number | null>(null);
   const [view, setView] = useState({ x: 0, y: 0, w: FEDERATION_OVERWORLD_W, h: FEDERATION_OVERWORLD_H });
 
   useEffect(() => {
-    setSelectedClan(selectedFromKey);
+    setSelectedClan(focusOnSelection ? selectedFromKey : null);
     setSelectedFederation(null);
-  }, [selectedFromKey]);
+  }, [selectedFromKey, focusOnSelection]);
 
-  const activeFederations = selectedFederation === null ? memberships[selectedClan] ?? [] : [selectedFederation];
+  const hasFocus = selectedClan !== null || selectedFederation !== null;
+  const showAllConnections = !hasFocus;
+  const activeFederations = showAllConnections
+    ? visibleFederationIds
+    : selectedFederation === null
+      ? memberships[selectedClan ?? 0] ?? []
+      : [selectedFederation];
   const activeFederationSet = new Set(activeFederations);
-  const activeClans = new Set(selectedFederation === null ? [selectedClan] : regions[selectedFederation] ?? []);
-  const selectedLabel = key(clans[selectedClan]?.[0] ?? []);
+  const activeClans = new Set(showAllConnections ? clans.map((_, clanId) => clanId) : selectedFederation === null ? [selectedClan ?? 0] : regions[selectedFederation] ?? []);
+  const selectedLabel = selectedClan === null ? "all clans" : key(clans[selectedClan]?.[0] ?? []);
   const selectedFederationLabel = selectedFederation === null ? null : `F${selectedFederation + 1}`;
+  const showDetailedGlyphs = view.w < 760;
   const clampView = (next: { x: number; y: number; w: number; h: number }) => ({
     ...next,
     x: Math.max(0, Math.min(FEDERATION_OVERWORLD_W - next.w, next.x)),
@@ -948,13 +978,13 @@ export function FederationOverworldMap({
 
   return (
     <MapFrame
-      title="Federation archipelago overworld"
+      title={title}
       w={FEDERATION_OVERWORLD_W}
       h={FEDERATION_OVERWORLD_H}
-      subtitle={selectedFederationLabel ? `${selectedFederationLabel} selected · 5 clan islands` : `${selectedLabel} clan · ${activeFederations.length} federations`}
+      subtitle={selectedFederationLabel ? `${selectedFederationLabel} selected · 5 clan islands` : selectedClan === null ? `${visibleFederationIds.length} federations · all connections` : `${selectedLabel} clan · ${activeFederations.length} federations`}
       footer={
         <div className="flex flex-wrap justify-between gap-2">
-          <span>120 clan islands · 144 federation satellites</span>
+          <span>120 clan islands · {visibleFederationIds.length} federation satellites</span>
           <span>click a node to inspect its memberships</span>
           <span>use the controls to zoom and pan</span>
         </div>
@@ -966,38 +996,47 @@ export function FederationOverworldMap({
           <path d="M0 455 C180 405 360 470 540 430 S900 410 1200 465 L1200 780 L0 780 Z" fill="#163d2f" />
           <text x="34" y="38" fontFamily="IBM Plex Mono, monospace" fontSize="15" fontWeight="700" fill="#fff4cb">n = 6 · federation archipelago</text>
           <text x="34" y="60" fontFamily="IBM Plex Mono, monospace" fontSize="11" fill="#a3d9b1">satellites above · clans below · bright beams show the selected relationship</text>
-          <text x="34" y="470" fontFamily="IBM Plex Mono, monospace" fontSize="11" fontWeight="700" fill="#a3d9b1">144 federation satellites</text>
+          <text x="34" y="470" fontFamily="IBM Plex Mono, monospace" fontSize="11" fontWeight="700" fill="#a3d9b1">{visibleFederationIds.length} federation satellites</text>
           <text x="34" y="752" fontFamily="IBM Plex Mono, monospace" fontSize="11" fontWeight="700" fill="#a3d9b1">120 clan islands</text>
 
-          {regions.map((memberIds, regionId) => {
+          {visibleFederationIds.map((regionId, visibleIndex) => {
+            const baseMemberIds = regions[regionId] ?? [];
+            const coverIndex = visibleFederationIds.indexOf(regionId);
+            const memberIds = collision
+              ? baseMemberIds.filter((clanId) => !(coverIndex === 1 && clanId === collision.stranded)).concat(coverIndex === 0 ? [collision.doubleBooked] : [])
+              : baseMemberIds;
             const active = activeFederationSet.has(regionId);
             const color = REGION_COLORS[regionId % REGION_COLORS.length];
             return memberIds.map((clanId) => (
               <line
                 key={`${regionId}-${clanId}`}
-                x1={satellitePoints[regionId].x}
-                y1={satellitePoints[regionId].y + 7}
+                x1={satellitePoints[visibleIndex].x}
+                y1={satellitePoints[visibleIndex].y + 7}
                 x2={clanPoints[clanId].x}
                 y2={clanPoints[clanId].y - 7}
                 stroke={color}
-                strokeWidth={active ? 2.5 : 0.7}
-                strokeDasharray={active ? undefined : "4 6"}
-                opacity={active ? 0.78 : 0.025}
+                strokeWidth={showAllConnections ? 0.9 : active ? 2.5 : 0.7}
+                strokeDasharray={showAllConnections ? "4 6" : active ? undefined : "4 6"}
+                opacity={showAllConnections ? 0.3 : active ? 0.78 : 0.025}
               />
             ));
           })}
 
-          {regions.map((_, regionId) => {
-            const point = satellitePoints[regionId];
+          {visibleFederationIds.map((regionId, visibleIndex) => {
+            const point = satellitePoints[visibleIndex];
             const active = activeFederationSet.has(regionId);
             const selected = selectedFederation === regionId;
             const color = REGION_COLORS[regionId % REGION_COLORS.length];
             return (
-              <g key={regionId} onClick={() => setSelectedFederation(regionId)} className="cursor-pointer" opacity={active ? 1 : 0.32}>
-                <circle cx={point.x} cy={point.y} r={selected ? 8 : active ? 6 : 3.5} fill={selected ? "#fff176" : color} stroke={selected ? "#fff176" : "#081b18"} strokeWidth={selected ? 3 : 1.5} />
-                <circle cx={point.x} cy={point.y} r="12" fill="transparent" stroke="transparent" />
-                {(active || view.w < 720) && <text x={point.x} y={point.y - 11} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize={view.w < 720 ? 9 : 8} fontWeight="700" fill={selected ? "#fff176" : color}>F{regionId + 1}</text>}
-              </g>
+              showDetailedGlyphs ? (
+                <FederationSatelliteGraphic key={regionId} point={point} regionId={regionId} color={color} selected={selected} active={showAllConnections || active} onSelect={() => { setSelectedFederation(selected ? null : regionId); setSelectedClan(null); }} />
+              ) : (
+                <g key={regionId} onClick={() => { setSelectedFederation(selected ? null : regionId); setSelectedClan(null); }} className="cursor-pointer" opacity={showAllConnections || active ? 1 : 0.32}>
+                  <circle cx={point.x} cy={point.y} r={selected ? 8 : active ? 6 : 3.5} fill={selected ? "#fff176" : color} stroke={selected ? "#fff176" : "#081b18"} strokeWidth={selected ? 3 : 1.5} />
+                  <circle cx={point.x} cy={point.y} r="12" fill="transparent" stroke="transparent" />
+                  {active && <text x={point.x} y={point.y - 11} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="8" fontWeight="700" fill={selected ? "#fff176" : color}>F{regionId + 1}</text>}
+                </g>
+              )
             );
           })}
 
@@ -1006,10 +1045,11 @@ export function FederationOverworldMap({
             const selected = selectedFederation === null && clanId === selectedClan;
             const color = selectedFederation === null ? "#65c5a2" : REGION_COLORS[selectedFederation % REGION_COLORS.length];
             return (
-              <g key={clanId} onClick={() => { setSelectedClan(clanId); setSelectedFederation(null); }} className="cursor-pointer" opacity={active ? 1 : 0.5}>
+              <g key={clanId} onClick={() => { setSelectedClan(selected ? null : clanId); setSelectedFederation(null); }} className="cursor-pointer" opacity={active ? 1 : 0.5}>
                 <path d={`M ${point.x - 13} ${point.y + 5} L ${point.x - 9} ${point.y - 7} L ${point.x + 8} ${point.y - 9} L ${point.x + 14} ${point.y + 4} L ${point.x + 6} ${point.y + 9} L ${point.x - 8} ${point.y + 9} Z`} fill={selected ? "#fff176" : active ? color : "#2b634c"} stroke={selected ? "#fff176" : active ? color : "#0b1c1c"} strokeWidth={selected ? 3 : 1.5} />
                 <circle cx={point.x} cy={point.y} r="14" fill="transparent" stroke="transparent" />
-                {(selected || (active && view.w < 720)) && <text x={point.x} y={point.y - 14} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize={view.w < 720 ? 9 : 8} fontWeight="700" fill={selected ? "#fff176" : color}>{key(clans[clanId]?.[0] ?? [])}</text>}
+                {showDetailedGlyphs && <ClanCoat clan={clans[clanId]?.[0] ?? []} at={{ x: point.x, y: point.y - 16 }} showLabel={false} scale={0.28} />}
+                {(selected || (active && showDetailedGlyphs)) && <text x={point.x} y={point.y - 31} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="8" fontWeight="700" fill={selected ? "#fff176" : color}>{key(clans[clanId]?.[0] ?? [])}</text>}
               </g>
             );
           })}
@@ -1417,6 +1457,7 @@ export function KickVillageMap({ from, to, crossed = false }: { from: Perm; to: 
 
   const p1 = points1[idx1 >= 0 ? idx1 : 0];
   const p2 = points2[idx2 >= 0 ? idx2 : 0];
+  const costThreeTargets = village2.filter((permutation) => weight(from, permutation) === 3);
 
   return (
     <MapFrame
@@ -1450,6 +1491,12 @@ export function KickVillageMap({ from, to, crossed = false }: { from: Perm; to: 
         {points2.map((p, i) => (
           <Road key={`b${i}`} from={p} to={points2[(i + 1) % 6]} cost={1} size="sm" />
         ))}
+
+        {/* Before crossing, expose every cost-3 alternative in the other clan. */}
+        {!crossed && costThreeTargets.map((permutation) => {
+          const targetIndex = village2.findIndex((candidate) => key(candidate) === key(permutation));
+          return <Road key={`cost-three-${key(permutation)}`} from={p1} to={points2[targetIndex]} cost={3} size="sm" />;
+        })}
 
         {/* The Kick Bridge (Cost 2): only visible once the traveller pays it */}
         {crossed ? (

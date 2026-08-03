@@ -5,12 +5,12 @@ import { SlidingWindowDemo } from "./components/Slider";
 import {
   ArcDemo,
   ExactCoverDemo,
+  FederationGateDemo,
   KickDemo,
   KickNecessityDemo,
   LiveChecker,
   LoopExplorer,
   RegionCoverageDemo,
-  RegionNeighborhoodDemo,
   WheelViz,
 } from "./components/Demo3";
 import { Callout, P, Section, Wide } from "./components/ui";
@@ -36,7 +36,7 @@ export default function App() {
         id="problem"
         num="01"
         kicker="The problem"
-        title="One string, every ordering"
+        title="Every ordering in a single string"
         lead={null}
       >
         <P>
@@ -78,34 +78,17 @@ export default function App() {
           formalised it; the published version credits “Anonymous 4chan poster” as first author.
         </Callout>
 
-      </Section>
-
-      {/* ========================= 2 · EXPLORE ========================= */}
-      <Section
-        id="explore"
-        num="02"
-        kicker="Getting a feel"
-        title="Six permutations, nine characters"
-        lead={null}
-      >
-        <P>
-          The record <TeX>123121321</TeX> has length <TeX>9 = 3! + 2! + 1!</TeX>. It is clearly
-          built by reuse: each new permutation shares a chunk with the previous one. Build your
-          own string below, then watch the greedy algorithm assemble the record.
-        </P>
-
         <Wide>
           <DemoErrorBoundary title="Demo 2 & 3 Error">
             <N3Explorer />
           </DemoErrorBoundary>
         </Wide>
-
       </Section>
 
-      {/* ========================= 3 · OVERLAPS ======================== */}
+      {/* ========================= 2 · OVERLAPS ======================== */}
       <Section
         id="overlap"
-        num="03"
+        num="02"
         kicker="The engine"
         title="Overlap, cost, and why this is a map problem"
         lead={null}
@@ -219,10 +202,10 @@ export default function App() {
         </P>
       </Section>
 
-      {/* ========================= 4 · RECORDS ========================= */}
+      {/* ========================= 3 · RECORDS ========================= */}
       <Section
         id="records"
-        num="04"
+        num="03"
         kicker="Where we stand"
         title="The greedy bound is not the answer"
         lead={null}
@@ -243,10 +226,10 @@ export default function App() {
         </P>
       </Section>
 
-      {/* ========================= 5 · 867 ============================= */}
+      {/* ========================= 4 · 867 ============================= */}
       <Section
         id="lower"
-        num="05"
+        num="04"
         kicker="The classical bound"
         title="Every valid n = 6 string needs at least 867 characters"
         lead={null}
@@ -263,10 +246,6 @@ export default function App() {
           so
         </P>
         <TeX block>{"L \\;=\\; n \\;+\\; \\textcolor{#b23a48}{w}, \\qquad \\textcolor{#b23a48}{w} = \\text{total cost of the tour}"}</TeX>
-        <P>
-          Bounding <TeX>L</TeX> from below is exactly bounding <V n="w">w</V> from below.
-        </P>
-
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="border-3 border-ink bg-[#fffbe9] p-4 shadow-[3px_3px_0_#1d1e33]">
             <div className="mb-1 font-mono text-[12px] font-bold uppercase tracking-wider text-accent">
@@ -407,20 +386,12 @@ export default function App() {
         </P>
 
         <Wide>
-          <DemoErrorBoundary title="2-loop explorer error">
-            <LoopExplorer />
-          </DemoErrorBoundary>
+          <FederationGateDemo />
         </Wide>
 
-        <P>
-          The local view shows one federation clearly. Before using it in a proof, it helps to zoom
-          out once more: federations overlap with neighbouring federations, and the same rotation clan
-          can sit in several different 2-loop federations.
-        </P>
-
         <Wide>
-          <DemoErrorBoundary title="Federation neighbourhood demo error">
-            <RegionNeighborhoodDemo />
+          <DemoErrorBoundary title="2-loop explorer error">
+            <LoopExplorer />
           </DemoErrorBoundary>
         </Wide>
 
@@ -469,10 +440,10 @@ export default function App() {
         </Wide>
       </Section>
 
-      {/* ========================= 6 · 868 ============================= */}
+      {/* ========================= 5 · 868 ============================= */}
       <Section
         id="upper"
-        num="06"
+        num="05"
         kicker="The new proof"
         title="One more character: s(6) ≥ 868"
         lead={

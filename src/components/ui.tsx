@@ -254,6 +254,7 @@ export function PlayBar({
   progress,
   label,
   playLabel = "watch it happen",
+  scrollTarget,
 }: {
   playing: boolean;
   onToggle: () => void;
@@ -265,11 +266,12 @@ export function PlayBar({
   progress?: string;
   label?: ReactNode;
   playLabel?: string;
+  scrollTarget?: React.RefObject<HTMLElement | null>;
 }) {
   const playBarRef = useRef<HTMLDivElement>(null);
   const handleToggle = () => {
     if (!playing && typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) {
-      playBarRef.current?.closest<HTMLElement>(".pixel-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      (scrollTarget?.current ?? playBarRef.current?.closest<HTMLElement>(".pixel-panel"))?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     onToggle();
   };

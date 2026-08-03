@@ -20,6 +20,7 @@ import { useStepper } from "../lib/anim";
 import {
   AbsorptionMap,
   ExactCoverTilingMap,
+  FederationOverworldMap,
   KickVillageMap,
   LoopRegionMap,
   PermWorldMap,
@@ -332,6 +333,49 @@ export function KickNecessityDemo() {
   );
 }
 
+export function FederationGateDemo() {
+  const [open, setOpen] = useState(false);
+  const gates = [...STRUCT.gensOfLoop[0]].sort();
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((value) => !value)}
+        className="w-full border-4 border-ink bg-[#f1ecff] px-5 py-3 text-left shadow-[5px_5px_0_#5b3fbf] transition-colors hover:bg-[#e8e0ff]"
+        aria-expanded={open}
+      >
+        <span className="font-mono text-[13px] font-bold uppercase tracking-[0.12em] text-accent">
+          {open ? "▾ hide — " : "▸ show — "}
+          why you need to use gates to enter a federation
+        </span>
+      </button>
+
+      {open && (
+        <Panel label="Why federations have five gates" className="mt-4 space-y-4">
+          <Note>
+            A federation is a closed 2-loop walk. It lands at a generator house, rotates through all
+            six houses in that clan, then takes a 2-cost jump that lands at the generator house of
+            the next clan. After five such jumps, the walk returns home. Because each of the five
+            clans is entered by exactly one of those five jumps, each clan has exactly one possible
+            gate. The other 25 houses are reached by rotations after entry; they are not outside
+            entrances.
+          </Note>
+          <div className="grid gap-2 sm:grid-cols-5">
+            {gates.map((gate) => (
+              <div key={gate} className="border-3 border-gold bg-[#fff2cd] px-2 py-2 text-center font-mono text-[13px] font-bold shadow-[2px_2px_0_#b26a12]">
+                {gate}
+              </div>
+            ))}
+          </div>
+          <div className="border-4 border-gold bg-[#fff2cd] px-4 py-3 font-mono text-[14px]">
+            5 clans × 1 generator each = <strong>5 federation gates</strong>.
+          </div>
+        </Panel>
+      )}
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /*  Demo 10 · the 2-loop explorer (with labels & zoom toggle)          */
 /* ------------------------------------------------------------------ */
@@ -503,32 +547,8 @@ export function ArcDemo() {
 /*  Region neighbourhood and coverage demos                            */
 /* ------------------------------------------------------------------ */
 
-export function RegionNeighborhoodDemo() {
-  return (
-    <Panel label="Zoomed out · neighbouring 2-loop federations" className="space-y-4">
-      <Note>
-        This board shows rotation clans rather than individual houses. One coloured tile
-        is one 2-loop federation; each federation contains five clans. Federations overlap in the full
-        720-house world, so a federation is a neighbourhood, not an isolated island.
-      </Note>
-      <Wide>
-        <ExactCoverTilingMap
-          cells={COVER.cells}
-          revealedRegions={8}
-          highlightRegion={0}
-          title="Neighbouring 2-loop federations"
-          subtitle="one colour = one 30-house federation; five squares per federation"
-        />
-      </Wide>
-      <div className="border-4 border-gold bg-[#fff2cd] px-4 py-3 shadow-[5px_5px_0_#b26a12]">
-        In the full universe, every clan belongs to {COVER.perWheel} different possible federations.
-        Later, Case B will choose exactly one federation for each clan.
-      </div>
-    </Panel>
-  );
-}
-
 export function RegionCoverageDemo() {
+  const [view, setView] = useState<"board" | "archipelago">("board");
   return (
     <Panel label="Why 24 federations is the first possible number" className="space-y-4">
       <Note>
@@ -549,19 +569,31 @@ export function RegionCoverageDemo() {
           </div>
         ))}
       </div>
-      <Wide>
-        <ExactCoverTilingMap
-          cells={COVER.cells}
-          revealedRegions={24}
-          title="24 federations have exactly enough room"
-          subtitle="24 × 5 clans = 120 clans = 720 houses"
-        />
-      </Wide>
-      <div className="border-4 border-emerald-700 bg-[#e3f2d6] px-4 py-3 shadow-[5px_5px_0_#1f7a5c]">
-        This picture gives the right scale: 24 federations is the first number large enough to cover
-        the whole world. The generator-gate argument above explains why jumps force at least
-        this many federations in the classical lower bound.
+      <div className="flex flex-wrap gap-2">
+        <Btn variant={view === "board" ? "primary" : "soft"} onClick={() => setView("board")}>tiling board</Btn>
+        <Btn variant={view === "archipelago" ? "primary" : "soft"} onClick={() => setView("archipelago")}>federation archipelago</Btn>
       </div>
+      {view === "board" ? (
+        <Wide>
+          <ExactCoverTilingMap
+            cells={COVER.cells}
+            revealedRegions={24}
+            title="24 federations have exactly enough room"
+            subtitle="24 × 5 clans = 120 clans = 720 houses"
+          />
+        </Wide>
+      ) : (
+        <Wide>
+          <FederationOverworldMap
+            clans={STRUCT.wheels}
+            regions={REGION_WHEELS}
+            federationIds={COVER.chosen}
+            selectedClanKey={key(STRUCT.wheels[0][0])}
+            title="24-federation exact-cover archipelago"
+            focusOnSelection={false}
+          />
+        </Wide>
+      )}
     </Panel>
   );
 }
@@ -741,7 +773,7 @@ export function LiveChecker() {
   const rhs = stats.p + stats.c + stats.v - 2;
   const holds = stats.wt >= rhs;
   const finished = player.step >= path.length;
-  const inequalityStatus = !finished ? "running..." : holds ? "HOLDS ✓" : "VIOLATED ✗";
+  const inequalityStatus = finished ? (holds ? "HOLDS ✓" : "VIOLATED ✗") : player.step === 0 && !player.playing ? "Waiting to start" : "running...";
   const inequalityBox = !finished
     ? "border-ink bg-[#f3ead0]"
     : holds
@@ -1004,6 +1036,7 @@ const CASE_B_STAGES = [
 
 export function ExactCoverDemo() {
   const [stage, setStage] = useState(0);
+  const [view, setView] = useState<"board" | "archipelago">("board");
   const [selectedOrbit, setSelectedOrbit] = useState(REPRESENTATIVE_ORBIT_VALUES.length - 1);
   const [solverTick, setSolverTick] = useState(0);
 
@@ -1125,6 +1158,12 @@ export function ExactCoverDemo() {
 
         {stage >= 1 && (
           <>
+            {(stage === 2 || stage === 3) && (
+              <div className="flex flex-wrap gap-2">
+                <Btn variant={view === "board" ? "primary" : "soft"} onClick={() => setView("board")}>tiling board</Btn>
+                <Btn variant={view === "archipelago" ? "primary" : "soft"} onClick={() => setView("archipelago")}>federation archipelago</Btn>
+              </div>
+            )}
             {stage === 3 && (
               <PlayBar
                 playing={laying.playing}
@@ -1137,7 +1176,7 @@ export function ExactCoverDemo() {
                 label={`${laying.step}/24 federations placed`}
               />
             )}
-              {stage <= 3 && (
+              {stage <= 3 && (view === "board" ? (
                 <Wide>
                   <ExactCoverTilingMap
                     cells={collisionStage ? collisionCells : COVER.cells}
@@ -1147,7 +1186,18 @@ export function ExactCoverDemo() {
                     subtitle={collisionStage ? "two federations share a clan, so one clan is stranded" : undefined}
                   />
                 </Wide>
-              )}
+              ) : (
+                <Wide>
+                  <FederationOverworldMap
+                    clans={STRUCT.wheels}
+                    regions={REGION_WHEELS}
+                    federationIds={collisionStage ? COVER.chosen : COVER.chosen.slice(0, Math.max(1, revealed))}
+                    collision={collisionStage ? collisionMarks : null}
+                    selectedClanKey={key(STRUCT.wheels[0][0])}
+                    title={collisionStage ? "Federation overlap archipelago" : "Federation tiling archipelago"}
+                  />
+                </Wide>
+              ))}
           </>
         )}
 

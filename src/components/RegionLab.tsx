@@ -374,7 +374,7 @@ export function FederationArchipelago({ model, selected, selectedRegion, activeR
           const active = activeRegionIds.includes(regionId);
           const color = REGION_COLORS[regionId % REGION_COLORS.length];
           return memberIds.map((clanId) => (
-            <line key={`${regionId}-${clanId}`} x1={ARCHIPELAGO_SATELLITES[regionId].x} y1={ARCHIPELAGO_SATELLITES[regionId].y + 13} x2={ARCHIPELAGO_CLANS[clanId].x} y2={ARCHIPELAGO_CLANS[clanId].y - 30} stroke={color} strokeWidth={active ? 3 : 1} strokeDasharray={active ? undefined : "5 6"} opacity={active ? 0.8 : 0.08} />
+            <line key={`${regionId}-${clanId}`} x1={ARCHIPELAGO_SATELLITES[regionId].x} y1={ARCHIPELAGO_SATELLITES[regionId].y + 13} x2={ARCHIPELAGO_CLANS[clanId].x} y2={ARCHIPELAGO_CLANS[clanId].y - 30} stroke={color} strokeWidth={active ? 3 : 1} strokeDasharray={active ? undefined : "5 6"} opacity={active ? 1 : 0.2} />
           ));
         })}
         {ARCHIPELAGO_CLANS.map((point, clanId) => {

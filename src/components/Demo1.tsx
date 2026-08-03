@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { coverage, key, pathToString, standardSuperperm, stringToPath } from "../lib/perms";
 import { useStepper } from "../lib/anim";
 import { TopDownTspMap } from "./PixelMaps";
@@ -45,13 +45,20 @@ export function N3Explorer() {
   const [best, setBest] = useState<number | null>(null);
   const cov = useMemo(() => coverage(s, 3), [s]);
   const complete = cov.found === 6;
+  const easterEgg = complete && route.length < 6;
 
   const player = useStepper(S3.length, { speed: 520 });
   const watchS = S3.slice(0, player.step);
+  const greedyMapRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (complete && (best === null || s.length < best)) setBest(s.length);
+    if (complete && !easterEgg && (best === null || s.length < best)) setBest(s.length);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [complete]);
+  }, [complete, easterEgg]);
+
+  const addTown = (p: number[]) => {
+    if (easterEgg) return;
+    setRoute((old) => (old.some((town) => key(town) === key(p)) ? old : [...old, p]));
+  };
 
   return (
     <div className="space-y-6">
@@ -97,9 +104,7 @@ export function N3Explorer() {
             path={route}
             title="n = 3 map"
             subtitle={`${route.length}/6 visited · ${cov.found}/6 covered`}
-            onTownClick={(p) =>
-              setRoute((old) => (old.some((town) => key(town) === key(p)) ? old : [...old, p]))
-            }
+            onTownClick={addTown}
           />
         </Wide>
 
@@ -111,7 +116,9 @@ export function N3Explorer() {
                 : "border-gold bg-[#fff2cd] shadow-[5px_5px_0_#b26a12]"
             }`}
           >
-            {s.length === 9 ? (
+            {easterEgg ? (
+              "Damn it I knew this would happen. First impressions are important and you might be confused. Basically, you took such an inefficient path with a 2 cost followed by a 3 cost jump that you ended up being able to smuggle in the value of an unvisited house inside your inefficiency. Consider this message an easter egg, and try again but this time avoiding 3 cost jumps."
+            ) : s.length === 9 ? (
               <>
                 Nine characters — optimal. You matched the shortest superpermutation on three
                 symbols.
@@ -140,7 +147,8 @@ export function N3Explorer() {
           onReset={player.reset}
           onSkip={player.skipToEnd}
           speed={player.speed}
-          onSpeed={player.setSpeed}
+         onSpeed={player.setSpeed}
+          scrollTarget={greedyMapRef}
           label={`character ${player.step}/${S3.length}`}
         />
 
@@ -154,15 +162,17 @@ export function N3Explorer() {
 
         <CoverageGrid s={watchS} n={3} />
 
-        <Wide>
-          <TopDownTspMap
-            n={3}
-            path={stringToPath(watchS, 3)}
-            title="greedy construction"
-            subtitle={`character ${player.step}/${S3.length}`}
-            spawnHint={player.step > 0 && player.step <= 2}
-          />
-        </Wide>
+        <div ref={greedyMapRef}>
+          <Wide>
+            <TopDownTspMap
+              n={3}
+              path={stringToPath(watchS, 3)}
+              title="greedy construction"
+              subtitle={`character ${player.step}/${S3.length}`}
+              spawnHint={player.step > 0 && player.step <= 2}
+            />
+          </Wide>
+        </div>
 
         {player.done && (
           <div className="animate-pop border-4 border-emerald-700 bg-[#e3f2d6] px-4 py-3 shadow-[5px_5px_0_#1f7a5c]">
