@@ -42,36 +42,16 @@ const HOUSTON_PATH = stringToPath(HOUSTON_872.split(""), 6);
 export function WheelViz() {
   const [sel, setSel] = useState<number[]>([1, 2, 3, 4, 5, 6]);
   const wheel = useMemo(() => wheelOfPerm(sel), [sel]);
-  const player = useStepper(6, { speed: 700 });
-
-  const walking = player.step > 0;
-  const shown = walking ? wheel[(player.step - 1) % 6] : sel;
-  const visited = new Set(wheel.slice(0, Math.max(1, player.step)).map(key));
 
   return (
     <DemoErrorBoundary title="Rotation Clan Demo Error">
       <div className="space-y-4">
-        <PlayBar
-          playing={player.playing}
-          onToggle={player.toggle}
-          onReset={player.reset}
-          onSkip={player.skipToEnd}
-          speed={player.speed}
-          onSpeed={player.setSpeed}
-          playLabel="walk one lap"
-          label={`house ${Math.min(player.step, 6)}/6`}
-        />
-
         <RotationVillageMap
           wheel={wheel}
-          selected={shown}
-          visitedKeys={walking ? visited : undefined}
-          onSelect={(p) => {
-            setSel(p);
-            player.reset();
-          }}
+          selected={sel}
+          onSelect={setSel}
           title="Rotation clan"
-          subtitle={walking ? `lap in progress · ${player.step - 1} tolls paid` : "click a house to re-centre"}
+          subtitle="click a house to re-centre"
         />
 
       </div>

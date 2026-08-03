@@ -271,7 +271,7 @@ export default function App() {
           Inside a clan, travel costs 1 per step; leaving costs at least 2.
         </Callout>
 
-        <div className="grid gap-7 lg:grid-cols-2 lg:items-center">
+        <div className="grid gap-7 lg:grid-cols-[13fr_7fr] lg:items-center">
           <WheelViz />
           <P>
             Clans are closed rings, so lapping one gets you six houses and then strands you: the

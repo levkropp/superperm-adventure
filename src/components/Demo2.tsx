@@ -411,8 +411,8 @@ export function TourViewer4() {
           Notice the first 3-cost jump: after the <strong>3124</strong> clan, both possible cost-2
           destinations, <strong>1234</strong> and <strong>1243</strong>, have already been visited, so
           the next unvisited clan begins with only a one-symbol overlap.
-          Watch the traveller walk the optimal route and the string assemble underneath, then
-          watch a random route waste characters at almost every step.
+          Watch the traveller walk the optimal route, then watch a random route waste characters
+          at almost every step.
         </Note>
 
       <div className="flex flex-wrap gap-2">
