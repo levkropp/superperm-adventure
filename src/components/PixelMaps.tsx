@@ -398,7 +398,7 @@ function VillageFields({ n, villageLayout }: { n: 2 | 3 | 4; villageLayout: bool
 }
 
 function ClanCoat({ clan, at }: { clan: Perm; at: Point }) {
-  const orbitRadius = clan.length === 3 ? 14 : 12;
+  const orbitRadius = clan.length === 3 ? 14 : clan.length === 4 ? 12 : 16;
   const markerId = `clan-arrow-${key(clan)}`;
   const direction = clan.length === 4 ? -1 : 1;
   const points = clan.map((_, i) => {
@@ -415,17 +415,23 @@ function ClanCoat({ clan, at }: { clan: Perm; at: Point }) {
       </defs>
       <text
         x="0"
-        y={clan.length === 3 ? -37 : -30}
+        y={clan.length === 3 ? -37 : clan.length === 4 ? -30 : -42}
         textAnchor="middle"
         fontFamily="IBM Plex Mono, monospace"
-        fontSize={clan.length === 3 ? 10 : 8}
+        fontSize={clan.length === 3 ? 10 : clan.length === 4 ? 8 : 9}
         fontWeight="700"
         fill="#fff4cb"
       >
         the {key(clan)} clan
       </text>
       <path
-        d={clan.length === 3 ? "M-27-25 H27 V-5 Q27 21 0 32 Q-27 21-27-5 Z" : "M-24-22 H24 V-4 Q24 18 0 28 Q-24 18-24-4 Z"}
+        d={
+          clan.length === 3
+            ? "M-27-25 H27 V-5 Q27 21 0 32 Q-27 21-27-5 Z"
+            : clan.length === 4
+              ? "M-24-22 H24 V-4 Q24 18 0 28 Q-24 18-24-4 Z"
+              : "M-30-27 H30 V-5 Q30 24 0 36 Q-30 24-30-5 Z"
+        }
         fill="#fff2cd"
         stroke="#081b18"
         strokeWidth="3"
@@ -879,6 +885,7 @@ export function RotationVillageMap({
     const a = -Math.PI / 2 + (i * Math.PI * 2) / wheel.length;
     return { x: center.x + Math.cos(a) * 208, y: center.y + Math.sin(a) * 108 };
   });
+  const clan = wheel.reduce((best, p) => (key(p) < key(best) ? p : best), wheel[0]);
   const selIndex = wheel.findIndex((p) => key(p) === key(selected));
 
   return (
@@ -898,12 +905,7 @@ export function RotationVillageMap({
         <TileField w={MAP_W} h={MAP_H} />
         <ellipse cx={center.x} cy={center.y} rx="118" ry="66" fill="#286f75" stroke="#081b18" strokeWidth="8" />
         <ellipse cx={center.x} cy={center.y} rx="100" ry="52" fill="#3d92a0" stroke="#73c9bd" strokeWidth="3" strokeDasharray="6 5" />
-        <text x={center.x} y={center.y - 4} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontWeight="700" fontSize="13" fill="#eafaf4">
-          CLAN WELL
-        </text>
-        <text x={center.x} y={center.y + 16} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="11" fill="#bfe8df">
-          neighbours cost 1
-        </text>
+        <ClanCoat clan={clan} at={center} />
         {points.map((p, i) => (
           <Road key={i} from={p} to={points[(i + 1) % points.length]} cost={1} />
         ))}
@@ -953,6 +955,8 @@ export function KickVillageMap({ from, to, crossed = false }: { from: Perm; to: 
 
   const idx1 = village1.findIndex((p) => key(p) === key(from));
   const idx2 = village2.findIndex((p) => key(p) === key(to));
+  const clan1 = village1.reduce((best, p) => (key(p) < key(best) ? p : best), village1[0]);
+  const clan2 = village2.reduce((best, p) => (key(p) < key(best) ? p : best), village2[0]);
 
   const p1 = points1[idx1 >= 0 ? idx1 : 0];
   const p2 = points2[idx2 >= 0 ? idx2 : 0];
@@ -975,15 +979,11 @@ export function KickVillageMap({ from, to, crossed = false }: { from: Perm; to: 
 
         {/* Clan 1 ring */}
         <ellipse cx={center1.x} cy={center1.y} rx="100" ry="88" fill="#1f4a33" stroke="#4f8a52" strokeWidth="2" strokeDasharray="6 4" />
-        <text x={center1.x} y={center1.y} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontWeight="700" fontSize="10" fill="#a3d9b1">
-          CLAN A
-        </text>
+        <ClanCoat clan={clan1} at={center1} />
 
         {/* Clan 2 ring */}
         <ellipse cx={center2.x} cy={center2.y} rx="100" ry="88" fill="#1f4a33" stroke="#4f8a52" strokeWidth="2" strokeDasharray="6 4" />
-        <text x={center2.x} y={center2.y} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontWeight="700" fontSize="10" fill="#a3d9b1">
-          CLAN B
-        </text>
+        <ClanCoat clan={clan2} at={center2} />
 
         {/* Clan 1 cost-1 roads */}
         {points1.map((p, i) => (
@@ -1105,9 +1105,7 @@ export function LoopRegionMap({
               strokeDasharray="7 5"
               opacity="0.8"
             />
-            <text x={c.x} y={c.y - 44} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="9" fontWeight="700" fill="#a3d9b1">
-              CLAN {i + 1}
-            </text>
+            <ClanCoat clan={walk[i * 6]} at={c} />
           </g>
         ))}
         {walk.slice(1, visible).map((p, i) => {
