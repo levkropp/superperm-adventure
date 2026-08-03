@@ -72,6 +72,8 @@ const N4_BASE: Lab3DPoint[] = [
   { x: 3.4, y: 1.8, z: 0 },
 ];
 
+const FEDERATION_COLORS = ["#b58900", "#cb4b16", "#dc322f", "#d33682", "#6c71c4", "#268bd2", "#2aa198", "#859900"];
+
 function projectLabPoint(point: Lab3DPoint, yaw: number, pitch: number, scale = 54) {
   const cosYaw = Math.cos(yaw);
   const sinYaw = Math.sin(yaw);
@@ -156,9 +158,9 @@ function N4FederationView({ model, selected, onSelect }: { model: RegionModel; s
           const centers = memberIds.map((clanId) => N4_BASE[clanId]);
           const center = centers.reduce((sum, point) => ({ x: sum.x + point.x / centers.length, y: sum.y + point.y / centers.length, z: 1.35 }), { x: 0, y: 0, z: 1.35 });
           const radiusX = Math.max(...centers.map((point) => Math.abs(point.x - center.x))) + 1.3;
-          const radiusY = Math.max(...centers.map((point) => Math.abs(point.y - center.y))) + 1.1;
+          const radiusY = (Math.max(...centers.map((point) => Math.abs(point.y - center.y))) + 1.1) * 3;
           const radiusZ = 1.55;
-          const color = i === 0 ? "#65c5a2" : "#f0aa4f";
+          const color = FEDERATION_COLORS[i % FEDERATION_COLORS.length];
           const active = activeRegionIds.includes(regionId);
           const particles = Array.from({ length: 96 }, (_, particle) => {
             const theta = ((particle * 137 + regionId * 41) % 360) * (Math.PI / 180);
