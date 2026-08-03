@@ -450,7 +450,6 @@ function ClanCoat({ clan, at, showLabel = true, scale = 0.82 }: { clan: Perm; at
             y2={next.y}
             stroke="#b23a48"
             strokeWidth="2"
-            markerStart={`url(#${markerId})`}
             markerEnd={`url(#${markerId})`}
           />
         );
