@@ -129,9 +129,9 @@ export function N3Explorer() {
 
       <Panel label="Demo 3 · watch the greedy construction" className="space-y-4">
         <Note>
-          The greedy rule: start at <strong>123</strong>, then always append the fewest
-          characters that complete a permutation you have not seen. Watch it build the record
-          string one character at a time.
+          Did you find the smallest string? You probably naturally used <strong>the greedy rule</strong>:
+          start at <strong>123</strong>, then always append the fewest characters that complete a
+          permutation you have not seen. Watch it build the record string one character at a time.
         </Note>
 
         <PlayBar

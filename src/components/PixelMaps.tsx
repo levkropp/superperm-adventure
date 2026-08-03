@@ -767,7 +767,7 @@ export function PermWorldMap({
       footer={
         footer ?? (
           <div className="flex flex-wrap justify-between gap-2">
-            <span>1 house = 1 permutation · 1 dashed box = 1 village</span>
+            <span>1 house = 1 permutation · 1 dashed box = 1 clan</span>
             <span>green hop = 2 · orange = 3 · red = 4+</span>
             <span>{jumps.length} jumps so far</span>
           </div>
@@ -858,13 +858,13 @@ export function OverlapRoadMap({ a, b }: { a: Perm; b: Perm }) {
   );
 }
 
-/** A single rotation wheel drawn as a village of neighbours. */
+/** A single rotation wheel drawn as a clan of neighbours. */
 export function RotationVillageMap({
   wheel,
   selected,
   visitedKeys,
   onSelect,
-  title = "Rotation village",
+  title = "Rotation clan",
   subtitle = "every road inside costs 1",
 }: {
   wheel: Perm[];
@@ -894,12 +894,12 @@ export function RotationVillageMap({
         </div>
       }
     >
-      <svg viewBox={`0 0 ${MAP_W} ${MAP_H}`} role="img" aria-label="rotation wheel drawn as a village">
+      <svg viewBox={`0 0 ${MAP_W} ${MAP_H}`} role="img" aria-label="rotation wheel drawn as a clan">
         <TileField w={MAP_W} h={MAP_H} />
         <ellipse cx={center.x} cy={center.y} rx="118" ry="66" fill="#286f75" stroke="#081b18" strokeWidth="8" />
         <ellipse cx={center.x} cy={center.y} rx="100" ry="52" fill="#3d92a0" stroke="#73c9bd" strokeWidth="3" strokeDasharray="6 5" />
         <text x={center.x} y={center.y - 4} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontWeight="700" fontSize="13" fill="#eafaf4">
-          VILLAGE WELL
+          CLAN WELL
         </text>
         <text x={center.x} y={center.y + 16} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="11" fill="#bfe8df">
           neighbours cost 1
@@ -934,7 +934,7 @@ export function RotationVillageMap({
   );
 }
 
-/** Demonstration of the Kick: a cost-2 move between two rotation villages. */
+/** Demonstration of the Kick: a cost-2 move between two rotation clans. */
 export function KickVillageMap({ from, to, crossed = false }: { from: Perm; to: Perm; crossed?: boolean }) {
   const village1 = wheelOfPerm(from);
   const village2 = wheelOfPerm(to);
@@ -962,34 +962,34 @@ export function KickVillageMap({ from, to, crossed = false }: { from: Perm; to: 
       title="The Kick (Cost = 2)"
       w={MAP_W}
       h={MAP_H}
-      subtitle={crossed ? `crossed: ${key(from)} -> ${key(to)}` : `still in village A, at ${key(from)}`}
+      subtitle={crossed ? `crossed: ${key(from)} -> ${key(to)}` : `still in clan A, at ${key(from)}`}
       footer={
         <div className="flex flex-wrap justify-between gap-2">
           <span>Kick = swap first 2 symbols and move to end</span>
-          <span>pay 2 to cross between rotation villages</span>
+          <span>pay 2 to cross between rotation clans</span>
         </div>
       }
     >
-      <svg viewBox={`0 0 ${MAP_W} ${MAP_H}`} role="img" aria-label="Kick connecting two rotation villages">
+      <svg viewBox={`0 0 ${MAP_W} ${MAP_H}`} role="img" aria-label="Kick connecting two rotation clans">
         <TileField w={MAP_W} h={MAP_H} />
 
-        {/* Village 1 ring */}
+        {/* Clan 1 ring */}
         <ellipse cx={center1.x} cy={center1.y} rx="100" ry="88" fill="#1f4a33" stroke="#4f8a52" strokeWidth="2" strokeDasharray="6 4" />
         <text x={center1.x} y={center1.y} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontWeight="700" fontSize="10" fill="#a3d9b1">
-          VILLAGE A
+          CLAN A
         </text>
 
-        {/* Village 2 ring */}
+        {/* Clan 2 ring */}
         <ellipse cx={center2.x} cy={center2.y} rx="100" ry="88" fill="#1f4a33" stroke="#4f8a52" strokeWidth="2" strokeDasharray="6 4" />
         <text x={center2.x} y={center2.y} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontWeight="700" fontSize="10" fill="#a3d9b1">
-          VILLAGE B
+          CLAN B
         </text>
 
-        {/* Village 1 cost-1 roads */}
+        {/* Clan 1 cost-1 roads */}
         {points1.map((p, i) => (
           <Road key={`a${i}`} from={p} to={points1[(i + 1) % 6]} cost={1} size="sm" />
         ))}
-        {/* Village 2 cost-1 roads */}
+        {/* Clan 2 cost-1 roads */}
         {points2.map((p, i) => (
           <Road key={`b${i}`} from={p} to={points2[(i + 1) % 6]} cost={1} size="sm" />
         ))}
@@ -1068,7 +1068,7 @@ export function LoopRegionMap({
         highlight={generators}
         footer={
           <div className="flex flex-wrap justify-between gap-2">
-            <span>Highlighted region = 30 houses in 5 villages</span>
+            <span>Highlighted region = 30 houses in 5 clans</span>
             <span>Orange = 5 generator gates</span>
           </div>
         }
@@ -1084,7 +1084,7 @@ export function LoopRegionMap({
       subtitle={`${visible}/${walk.length} houses revealed`}
       footer={
         <div className="flex flex-wrap justify-between gap-2">
-          <span>5 villages x 6 houses = 30 permutations</span>
+          <span>5 clans x 6 houses = 30 permutations</span>
           <span>Orange roofs = the 5 entrance gates</span>
           <span>Red bridges = kicks (cost 2)</span>
         </div>
@@ -1106,7 +1106,7 @@ export function LoopRegionMap({
               opacity="0.8"
             />
             <text x={c.x} y={c.y - 44} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="9" fontWeight="700" fill="#a3d9b1">
-              VILLAGE {i + 1}
+              CLAN {i + 1}
             </text>
           </g>
         ))}
@@ -1240,8 +1240,8 @@ export interface TilingCell {
 }
 
 /**
- * The 120 rotation villages laid out as a board. Each 2-loop in the cover
- * claims exactly five villages, so a legal cover paints the board with 24
+ * The 120 rotation clans laid out as a board. Each 2-loop in the cover
+ * claims exactly five clans, so a legal cover paints the board with 24
  * colours and no square left over.
  */
 export function ExactCoverTilingMap({
@@ -1249,13 +1249,13 @@ export function ExactCoverTilingMap({
   revealedRegions,
   highlightRegion = null,
   collision = null,
-  title = "The tiling board · 120 villages",
+  title = "The tiling board · 120 clans",
   subtitle,
 }: {
   cells: TilingCell[];
   revealedRegions: number;
   highlightRegion?: number | null;
-  /** Show the impossible case: one village double-booked, one left stranded. */
+  /** Show the impossible case: one clan double-booked, one left stranded. */
   collision?: { doubleBooked: number; stranded: number } | null;
   title?: string;
   subtitle?: string;
@@ -1273,16 +1273,16 @@ export function ExactCoverTilingMap({
       title={title}
       w={w}
       h={h}
-      subtitle={subtitle ?? `${painted}/120 villages claimed`}
+      subtitle={subtitle ?? `${painted}/120 clans claimed`}
       footer={
         <div className="flex flex-wrap justify-between gap-2">
-          <span>1 square = 1 village (6 houses)</span>
-          <span>1 colour = 1 two-loop region (5 villages)</span>
+          <span>1 square = 1 clan (6 houses)</span>
+          <span>1 colour = 1 two-loop region (5 clans)</span>
           <span>{collision ? "illegal: overlap detected" : `${Math.min(revealedRegions, 24)}/24 regions placed`}</span>
         </div>
       }
     >
-      <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label="board of 120 villages coloured by region">
+      <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label="board of 120 clans coloured by region">
         <rect width={w} height={h} fill="#10231f" />
         <rect x="4" y="4" width={w - 8} height={h - 8} fill="none" stroke="#081b18" strokeWidth="8" />
 

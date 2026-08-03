@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   HOUSTON_872,
   allPerms,
@@ -14,7 +14,7 @@ import {
 import { useStepper } from "../lib/anim";
 import { OverlapRoadMap, PermWorldMap, TopDownTspMap } from "./PixelMaps";
 import { Btn, Note, Panel, PermChip, PermText, PlayBar, Str, Wide } from "./ui";
-import { CostLensLegend, LinkReason } from "./CostLens";
+import { CostLensLegend } from "./CostLens";
 
 /* ------------------------------------------------------------------ */
 /*  Demo 4 · the sliding overlap: where does "cost" come from?         */
@@ -259,7 +259,6 @@ const OPTIMAL_3: number[][] = [
 export function TourBuilder3() {
   const [path, setPath] = useState<number[][]>([]);
   const [auto, setAuto] = useState<number[][] | null>(null);
-  const [lastEdge, setLastEdge] = useState<{ from: number[] | null; to: number[] | null }>({ from: null, to: null });
 
   const player = useStepper(auto ? auto.length : 0, { speed: 750 });
   const shownPath = auto ? auto.slice(0, player.step) : path;
@@ -272,7 +271,6 @@ export function TourBuilder3() {
   const startAuto = (tour: number[][]) => {
     setAuto(tour);
     setPath([]);
-    setLastEdge({ from: null, to: null });
     player.reset();
     setTimeout(player.play, 30);
   };
@@ -281,14 +279,6 @@ export function TourBuilder3() {
     setAuto(null);
     setPath((old) => (old.some((q) => key(q) === key(p)) ? old : [...old, p]));
   };
-
-  const latestFrom = shownPath.length >= 2 ? shownPath[shownPath.length - 2] : null;
-  const latestTo = shownPath.length >= 2 ? shownPath[shownPath.length - 1] : null;
-
-  // During an automatic route, explain the road that was just completed.
-  useEffect(() => {
-    if (latestFrom && latestTo) setLastEdge({ from: latestFrom, to: latestTo });
-  }, [latestFrom, latestTo]);
 
   return (
     <Panel label="Demo 6 · chain the towns into one route" className="space-y-4">
@@ -316,7 +306,6 @@ export function TourBuilder3() {
           onClick={() => {
             setAuto(null);
             setPath([]);
-            setLastEdge({ from: null, to: null });
           }}
         >
           clear and build my own
@@ -344,15 +333,10 @@ export function TourBuilder3() {
           subtitle={`${shownPath.length}/6 towns · ${total || 0} characters`}
           villageLayout
           onTownClick={manualClick}
-          onEdgeSelected={(from, to) => setLastEdge({ from, to })}
         />
       </Wide>
 
       <CostLensLegend />
-      <LinkReason
-        from={lastEdge.from ?? (shownPath.length ? shownPath[shownPath.length - 1] : null)}
-        to={lastEdge.to}
-      />
 
       <div className="border-3 border-ink bg-[#f3ead0] px-4 py-3 shadow-[3px_3px_0_#1d1e33]">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -424,6 +408,9 @@ export function TourViewer4() {
           characters. The map arranges them into six clans of four — the <strong>1234</strong>,{" "}
           <strong>2314</strong>, <strong>3124</strong>, <strong>2134</strong>, <strong>1324</strong>,
           and <strong>3214</strong> clans — each sharing a rotation chain of cheap 1-cost moves.
+          Notice the first 3-cost jump: after the <strong>3124</strong> clan, both possible cost-2
+          destinations, <strong>1234</strong> and <strong>1243</strong>, have already been visited, so
+          the next unvisited clan begins with only a one-symbol overlap.
           Watch the traveller walk the optimal route and the string assemble underneath, then
           watch a random route waste characters at almost every step.
         </Note>
@@ -456,11 +443,6 @@ export function TourViewer4() {
       </Wide>
 
       <CostLensLegend />
-      <LinkReason
-        compact
-        from={shownPath.length >= 2 ? shownPath[shownPath.length - 2] : shownPath[0] ?? null}
-        to={shownPath.length >= 2 ? shownPath[shownPath.length - 1] : null}
-      />
 
       <div className="border-3 border-ink bg-[#f3ead0] px-4 py-3 shadow-[3px_3px_0_#1d1e33]">
         <Str s={s} className="text-lg" max={300} />

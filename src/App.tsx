@@ -62,8 +62,7 @@ export default function App() {
         <P>
           We know the shortest answers for one through five symbols: <TeX>s(1)=1</TeX>,{" "}
           <TeX>s(2)=3</TeX>, <TeX>s(3)=9</TeX>, <TeX>s(4)=33</TeX>, and <TeX>s(5)=153</TeX>. For{" "}
-          <TeX>n = 6</TeX>, the answer was very hard to find. We knew it had to be between 867
-          and 872; this adventure follows a proof that pushes the lower bound to 868.
+          <TeX>n = 6</TeX>, the answer was very hard to find.
         </P>
 
         <Callout variant="story" title="Origin">
@@ -264,12 +263,12 @@ export default function App() {
           </div>
         </div>
 
-        {/* Lemma 1: Rotation Villages */}
-        <Callout variant="proof" title="Lemma 1 · the rotation rule & villages">
-          The only cost-1 move is a rotation. Rotating six times returns you to where you began,
-          so the cheap roads carve the 720 permutations into <strong>120 closed rings of six</strong>.
-          We draw each ring as a village: inside, travel costs 1 per step; leaving costs at
-          least 2.
+        {/* Lemma 1: Rotation Clans */}
+        <Callout variant="proof" title="Lemma 1 · review: clans and rotation chains">
+          The coats of arms in the earlier demos show the rule we already know: each clan is a
+          closed rotation chain. For <TeX>n = 6</TeX>, rotating six times returns you to where you
+          began, so the cheap roads carve the 720 permutations into <strong>120 clans of six</strong>.
+          Inside a clan, travel costs 1 per step; leaving costs at least 2.
         </Callout>
 
         <Wide>
@@ -280,16 +279,16 @@ export default function App() {
 
         {/* The Kick */}
         <P>
-          Villages are closed rings, so lapping one gets you six houses and then strands you: the
+          Clans are closed rings, so lapping one gets you six houses and then strands you: the
           cheap road just brings you back to where you started. To reach the other 714 houses the
           traveller has to leave, and leaving is where the money goes. It turns out there is only
           one affordable way out.
         </P>
 
-        <Callout variant="idea" title="Crossing between villages: the kick">
+        <Callout variant="idea" title="Crossing between clans: the kick">
           A <strong>kick</strong> takes the first two symbols, swaps them, and sends them to the
           back: <TeX>123456 \to 345621</TeX>. It costs <strong>2</strong>, and it always lands in a
-          different village. It is the cheapest exit that exists, and the next two figures show
+          different clan. It is the cheapest exit that exists, and the next two figures show
           why nothing else comes close.
         </Callout>
 
@@ -305,19 +304,19 @@ export default function App() {
           </DemoErrorBoundary>
         </Wide>
 
-        {/* Lemma 2: Finish Your Villages */}
-        <Callout variant="proof" title="Lemma 2 · finish your villages">
+        {/* Lemma 2: Finish Your Clans */}
+        <Callout variant="proof" title="Lemma 2 · finish your clans">
           <P>
-            Obviously, you should clear a village before leaving for another one. The only cheap
-            roads live inside a village, and a half-lapped village has to be revisited — and
-            revisiting always costs a fresh, expensive entrance. Leaving early can never save
+            Obviously, you should clear a clan before leaving for another one. The only cheap roads
+            live inside a clan, and a half-lapped clan has to be revisited — and revisiting always
+            costs a fresh, expensive entrance. Leaving early can never save
             characters; it can only add them.
           </P>
           <P>
-            Call a village <strong>completed</strong> when the tour laps all six of its houses in
-            one unbroken run of cheap roads. Every one of the 120 villages must be visited, and
-            each unfinished one forces an extra entry toll later in the tour. The cheapest way to
-            arrange a full tour therefore completes at least <V n="c">c</V> = 119 of them.
+            Call a clan <strong>completed</strong> when the tour laps all six of its houses in one
+            unbroken run of cheap roads. Every one of the 120 clans must be visited, and each
+            unfinished one forces an extra entry toll later in the tour. The cheapest way to arrange
+            a full tour therefore completes at least <V n="c">c</V> = 119 of them.
           </P>
         </Callout>
 
@@ -332,39 +331,39 @@ export default function App() {
           <P>
             An <strong>arc</strong> is an unbroken run of cheap moves: the traveller pays 1, then 1,
             then 1 again, never spending more. Since the only price-1 move is a rotation, an arc
-            never leaves the village it starts in — it is simply a stretch of walking around one
+            never leaves the clan it starts in — it is simply a stretch of walking around one
             ring.
           </P>
           <P>
             An arc ends the moment the traveller pays 2 or more, which we call a{" "}
             <strong>jump</strong>. So a walk is just arcs separated by jumps, like words separated
             by spaces: a walk made of <TeX>R</TeX> arcs contains exactly <TeX>R - 1</TeX> jumps.
-            And because the traveller must set foot in all 120 villages, and no arc can be in two
-            villages at once, he needs at least <TeX>R \ge 120</TeX> arcs — and therefore at least
+            And because the traveller must set foot in all 120 clans, and no arc can be in two clans
+            at once, he needs at least <TeX>R \ge 120</TeX> arcs — and therefore at least
             119 jumps.
           </P>
         </Callout>
 
         {/* 2-Loops */}
         <P>
-          We now know the traveller's whole vocabulary: lap a village with cheap rotations, and
+          We now know the traveller's whole vocabulary: lap a clan with cheap rotations, and
           leave it with a kick. So ask the obvious question — what happens if he only ever does
           that? Lap, kick, lap, kick, and so on, never paying more than he must.
         </P>
 
         <P>
           The answer is surprisingly tidy. After the fifth kick he arrives back exactly where he
-          started, having toured <strong>five villages and thirty houses</strong> and closed a
+          started, having toured <strong>five clans and thirty houses</strong> and closed a
           circuit. He cannot wander forever on cheap moves; the cheap moves themselves fence him
           into a district. That district is what the proofs call a <strong>2-loop</strong>, and we
           will call it a <strong>region</strong>.
         </P>
 
         <Callout variant="definition" title="Regions (2-loops)">
-          A <strong>region</strong> is the closed circuit you get by alternating “lap a village”
-          with “take a kick”: 5 villages, 30 houses. There are <strong>144</strong> regions
+          A <strong>region</strong> is the closed circuit you get by alternating “lap a clan” with
+          “take a kick”: 5 clans, 30 houses. There are <strong>144</strong> regions
           covering the world. They are not a partition — regions overlap, and in fact every
-          village belongs to 6 different regions — so a region is best thought of as a natural
+          clan belongs to 6 different regions — so a region is best thought of as a natural
           neighbourhood rather than a fixed county boundary.
         </Callout>
 
@@ -384,7 +383,7 @@ export default function App() {
 
         <P>
           The local view shows one region clearly. Before using it in a proof, it helps to zoom
-          out once more: regions overlap with neighbouring regions, and the same rotation village
+          out once more: regions overlap with neighbouring regions, and the same rotation clan
           can sit in several different 2-loop regions.
         </P>
 
@@ -401,7 +400,7 @@ export default function App() {
           therefore absorb at most five jumps.
           Therefore, a tour with <TeX>R</TeX> arcs (<TeX>R - 1</TeX> jumps) requires:
           <TeX block>{"\\textcolor{#b26a12}{v} \\;\\ge\\; \\left\\lceil \\frac{R-1}{5} \\right\\rceil"}</TeX>
-          Every village needs at least one arc, so <TeX>R \ge 120</TeX> and hence{" "}
+          Every clan needs at least one arc, so <TeX>R \ge 120</TeX> and hence{" "}
           <V n="v">v</V> ≥ ⌈119/5⌉ = 24.
         </Callout>
 
@@ -421,7 +420,7 @@ export default function App() {
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <VarKey n="p" value="720" note="houses that must be visited" />
-          <VarKey n="c" value="≥ 119" note="villages lapped in one run" />
+          <VarKey n="c" value="≥ 119" note="clans lapped in one run" />
           <VarKey n="v" value="≥ 24" note="2-loop regions entered" />
           <VarKey n="w" value="≥ 861" note="characters the tour must pay" />
         </div>
@@ -506,16 +505,16 @@ export default function App() {
           <P>
             Suppose <V n="v">v</V> = 24. Since the 24 regions must contain all 720 houses and have
             exactly 720 places between them, they are pairwise disjoint: an{" "}
-            <strong>exact cover</strong>. Every village then lies in exactly one region and so has
-            exactly one gate. A gate is the only entrance, and a village cannot be re-entered
-            through a gate that does not exist, so the traveller laps each village once and in
+            <strong>exact cover</strong>. Every clan then lies in exactly one region and so has
+            exactly one gate. A gate is the only entrance, and a clan cannot be re-entered
+            through a gate that does not exist, so the traveller laps each clan once and in
             full — that is <TeX>R = 120</TeX> arcs of five cheap steps, costing 600 characters.
           </P>
           <P>
-            What remains is only the order in which the 120 villages are visited, plus the price
-            of each hop between consecutive villages. Enumerating every exact cover gives 10,068
-            of them, falling into 29 classes once you allow the six symbols to be relabelled;
-            solving each class exactly gives a cheapest village-order cost of 265. Hence
+            What remains is only the order in which the 120 clans are visited, plus the price of
+            each hop between consecutive clans. Enumerating every exact cover gives 10,068 of them,
+            falling into 29 classes once you allow the six symbols to be relabelled; solving each
+            class exactly gives a cheapest clan-order cost of 265. Hence
           </P>
           <TeX block>{"\\textcolor{#b23a48}{w} \\;=\\; 600 + 265 \\;=\\; 865 \\;>\\; 861 ."}</TeX>
         </Callout>

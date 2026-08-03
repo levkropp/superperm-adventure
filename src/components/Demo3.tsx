@@ -35,7 +35,7 @@ const GREEDY_PATH = stringToPath(standardSuperperm(6), 6);
 const HOUSTON_PATH = stringToPath(HOUSTON_872.split(""), 6);
 
 /* ------------------------------------------------------------------ */
-/*  Demo 9 · rotation villages                                         */
+/*  Demo 9 · rotation clans                                             */
 /* ------------------------------------------------------------------ */
 
 export function WheelViz() {
@@ -48,7 +48,7 @@ export function WheelViz() {
   const visited = new Set(wheel.slice(0, Math.max(1, player.step)).map(key));
 
   return (
-    <DemoErrorBoundary title="Rotation Village Demo Error">
+    <DemoErrorBoundary title="Rotation Clan Demo Error">
       <div className="space-y-4">
         <PlayBar
           playing={player.playing}
@@ -70,7 +70,7 @@ export function WheelViz() {
               setSel(p);
               player.reset();
             }}
-            title="Rotation village"
+            title="Rotation clan"
             subtitle={walking ? `lap in progress · ${player.step - 1} tolls paid` : "click a house to re-centre"}
           />
         </Wide>
@@ -81,7 +81,7 @@ export function WheelViz() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  NEW Demo 9B · The Kick (Moving between rotation villages)          */
+/*  NEW Demo 9B · The Kick (Moving between rotation clans)              */
 /* ------------------------------------------------------------------ */
 
 export function KickDemo() {
@@ -91,12 +91,12 @@ export function KickDemo() {
 
   return (
     <DemoErrorBoundary title="The Kick Demo Error">
-      <Panel label="The Kick: traveling between rotation villages" className="space-y-4">
+      <Panel label="The Kick: traveling between rotation clans" className="space-y-4">
         <Note>
-          How do you move between two different rotation villages? By using a special move called a{" "}
+          How do you move between two different rotation clans? By using a special move called a{" "}
           <strong>Kick</strong>: swap the first two symbols and move them to the back. For example,{" "}
           <PermText p={start} /> becomes <PermText p={kicked} />. This costs exactly <strong>2</strong> tolls
-          and lands in a completely new rotation village!
+          and lands in a completely new rotation clan!
         </Note>
 
         <PlayBar
@@ -107,7 +107,7 @@ export function KickDemo() {
           speed={player.speed}
           onSpeed={player.setSpeed}
           playLabel="take the kick bridge"
-          label={player.step === 0 ? "at Village A" : "crossed bridge to Village B"}
+          label={player.step === 0 ? "at Clan A" : "crossed bridge to Clan B"}
         />
 
         <Wide>
@@ -128,7 +128,7 @@ export function KickDemo() {
               setStart(p);
             }}
           >
-            random village
+            random clan
           </Btn>
         </div>
       </Panel>
@@ -137,7 +137,7 @@ export function KickDemo() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Demo 9C · why leaving a village must be a kick                     */
+/*  Demo 9C · why leaving a clan must be a kick                        */
 /* ------------------------------------------------------------------ */
 
 const LEDGERS = [
@@ -188,16 +188,16 @@ export function KickNecessityDemo() {
         >
           <span className="font-mono text-[13px] font-bold uppercase tracking-[0.12em] text-accent">
             {open ? "▾ hide — " : "▸ show — "}
-            why leaving a village is always a kick
+            why leaving a clan is always a kick
           </span>
         </button>
 
         {open && (
-          <Panel label="Why leaving a village is always a kick" className="mt-4 space-y-4">
+          <Panel label="Why leaving a clan is always a kick" className="mt-4 space-y-4">
             <Note>
-          We keep saying “take a kick to reach the next village”. Here is why there is no
+          We keep saying “take a kick to reach the next clan”. Here is why there is no
           alternative. Every possible next move from a permutation is sorted below by price, and
-          by whether it stays in the village or leaves it — all 719 of them, checked live.
+          by whether it stays in the clan or leaves it — all 719 of them, checked live.
         </Note>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -243,7 +243,7 @@ export function KickNecessityDemo() {
           <div className="border-3 border-ember bg-[#ffe6da] px-4 py-3 shadow-[3px_3px_0_#b23a48]">
             <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-ember">price 3+ · leaves</div>
             <div className="font-mono text-2xl font-bold">{census.costlyExit}</div>
-            <div className="mt-1 text-[13px] text-ink-soft">every other village in the world</div>
+            <div className="mt-1 text-[13px] text-ink-soft">every other clan in the world</div>
           </div>
         </div>
 
@@ -260,30 +260,30 @@ export function KickNecessityDemo() {
               <div className="font-mono font-bold">
                 <PermText p={[...u.slice(2), u[0], u[1]]} />
               </div>
-              <div className="text-[14px] text-ink-soft">original order — this is just two rotations, still in the village</div>
+              <div className="text-[14px] text-ink-soft">original order — this is just two rotations, still in the clan</div>
             </div>
             <div className="border-2 border-ink bg-white/70 px-3 py-2">
               <div className="font-mono font-bold">
                 <PermText p={kick(u)} />
               </div>
-              <div className="text-[14px] text-ink-soft">swapped order — the kick, and it lands in a new village</div>
+              <div className="text-[14px] text-ink-soft">swapped order — the kick, and it lands in a new clan</div>
             </div>
           </div>
           <P className="mt-2">
-            So the cheapest possible way to leave a village costs 2, and the kick is the only
+            So the cheapest possible way to leave a clan costs 2, and the kick is the only
             move that achieves it. Any other exit costs 3 or more.
           </P>
         </Callout>
 
         <Callout variant="idea" title="A quick proof that non-kick exits cannot be affordable">
           <P>
-            A full tour makes 719 moves and must set foot in all 120 villages, so it changes
-            village at least 119 times. Price every move at its cheapest legal value: an
-            in-village move costs at least 1, and a village change costs at least 2. That alone
+            A full tour makes 719 moves and must set foot in all 120 clans, so it changes clan at
+            least 119 times. Price every move at its cheapest legal value: an in-clan move costs at
+            least 1, and a clan change costs at least 2. That alone
             gives
           </P>
           <TeX block>
-            {"\\textcolor{#b23a48}{w} \\;\\ge\\; \\underbrace{(719 - J)}_{\\text{inside villages}} \\;+\\; \\underbrace{2J}_{\\text{departures}} \\;=\\; 719 + J \\;\\ge\\; 838"}
+            {"\\textcolor{#b23a48}{w} \\;\\ge\\; \\underbrace{(719 - J)}_{\\text{inside clans}} \\;+\\; \\underbrace{2J}_{\\text{departures}} \\;=\\; 719 + J \\;\\ge\\; 838"}
           </TeX>
           <P>
             Now suppose <TeX>K</TeX> of those departures are <em>not</em> kicks. We just proved
@@ -318,9 +318,9 @@ export function KickNecessityDemo() {
             <tbody>
               {[
                 ["moves in total", ledger.steps],
-                ["cheap rotations inside a village", ledger.rotations],
-                ["skips inside a village (wasteful)", ledger.skips],
-                ["village departures", ledger.departures],
+                ["cheap rotations inside a clan", ledger.rotations],
+                ["skips inside a clan (wasteful)", ledger.skips],
+                ["clan departures", ledger.departures],
                 ["…of which are kicks (price 2)", ledger.kickDepartures],
                 ["…of which cost 3 or more", ledger.costlyDepartures],
                 ["cheapest conceivable total", floor],
@@ -338,7 +338,7 @@ export function KickNecessityDemo() {
         <div className="border-4 border-gold bg-[#fff2cd] px-4 py-3 shadow-[5px_5px_0_#b26a12]">
           {ledger.costlyDepartures === 0 ? (
             <>
-              Every single one of the {ledger.kickDepartures} village departures in this champion
+              Every single one of the {ledger.kickDepartures} clan departures in this champion
               is a kick. Not one expensive exit anywhere — exactly as the ledger predicts.
             </>
           ) : (
@@ -388,10 +388,10 @@ export function LoopExplorer() {
   const gens = STRUCT.gensOfLoop[loopId];
   return (
     <DemoErrorBoundary title="2-Loop Explorer Error">
-      <Panel label="Demo 11 · 2-loop region (30 houses in 5 villages)" className="space-y-4">
+      <Panel label="Demo 11 · 2-loop region (30 houses in 5 clans)" className="space-y-4">
         <Note>
-          Villages are joined into circuits. Lap a village, take a <strong>kick bridge</strong> (cost 2),
-          and you land in a new village. Five kicks bring you home, touring 30 permutations in a{" "}
+          Clans are joined into circuits. Lap a clan, take a <strong>kick bridge</strong> (cost 2),
+          and you land in a new clan. Five kicks bring you home, touring 30 permutations in a{" "}
           <strong>2-loop region</strong>. There are 144 such regions in the world.
         </Note>
 
@@ -522,8 +522,8 @@ export function RegionNeighborhoodDemo() {
   return (
     <Panel label="Zoomed out · neighbouring 2-loop regions" className="space-y-4">
       <Note>
-        This board shows rotation villages rather than individual houses. One coloured tile
-        is one 2-loop region; each region contains five villages. Regions overlap in the full
+        This board shows rotation clans rather than individual houses. One coloured tile
+        is one 2-loop region; each region contains five clans. Regions overlap in the full
         720-house world, so a region is a neighbourhood, not an isolated island.
       </Note>
       <Wide>
@@ -536,8 +536,8 @@ export function RegionNeighborhoodDemo() {
         />
       </Wide>
       <div className="border-4 border-gold bg-[#fff2cd] px-4 py-3 shadow-[5px_5px_0_#b26a12]">
-        In the full universe, every village belongs to {COVER.perWheel} different possible regions.
-        Later, Case B will choose exactly one region for each village.
+        In the full universe, every clan belongs to {COVER.perWheel} different possible regions.
+        Later, Case B will choose exactly one region for each clan.
       </div>
     </Panel>
   );
@@ -547,14 +547,14 @@ export function RegionCoverageDemo() {
   return (
     <Panel label="Why 24 regions is the first possible number" className="space-y-4">
       <Note>
-        One region contains 5 villages, and each village contains 6 houses. Thus one region
+        One region contains 5 clans, and each clan contains 6 houses. Thus one region
         accounts for 5 × 6 = 30 houses. To have enough region-capacity for all 720 houses,
         you need 24 regions.
       </Note>
       <div className="grid gap-3 sm:grid-cols-4">
         {[
-          ["one region", "5 villages"],
-          ["one village", "6 houses"],
+          ["one region", "5 clans"],
+          ["one clan", "6 houses"],
           ["one region", "30 houses"],
           ["twenty-four regions", "720 houses"],
         ].map(([a, b]) => (
@@ -569,7 +569,7 @@ export function RegionCoverageDemo() {
           cells={COVER.cells}
           revealedRegions={24}
           title="24 regions have exactly enough room"
-          subtitle="24 × 5 villages = 120 villages = 720 houses"
+          subtitle="24 × 5 clans = 120 clans = 720 houses"
         />
       </Wide>
       <div className="border-4 border-emerald-700 bg-[#e3f2d6] px-4 py-3 shadow-[5px_5px_0_#1f7a5c]">
@@ -742,7 +742,7 @@ export function LiveChecker() {
   const prefix = useMemo(() => path.slice(0, Math.max(1, player.step)), [path, player.step]);
   const stats = useMemo(() => fullWalkStats(prefix, STRUCT), [prefix]);
 
-  // Tally of what each village-to-village hop cost so far.
+  // Tally of what each clan-to-clan hop cost so far.
   const hopTally = useMemo(() => {
     const t: Record<number, number> = {};
     for (let i = 1; i < prefix.length; i++) {
@@ -814,7 +814,7 @@ export function LiveChecker() {
 
         <div className="border-3 border-ink bg-[#f3ead0] p-4 shadow-[3px_3px_0_#1d1e33]">
           <div className="mb-2 font-mono text-[12px] font-bold uppercase tracking-wider text-ink-soft">
-            what the hops between villages cost
+            what the hops between clans cost
           </div>
           <div className="space-y-1.5">
             {[2, 3, 4, 5, 6].map((c) => {
@@ -840,14 +840,14 @@ export function LiveChecker() {
             })}
           </div>
           <div className="mt-2 font-mono text-[13px] text-ink-soft">
-            cheap kicks are the bulk of the budget; every orange or red bar is a village exit that
+            cheap kicks are the bulk of the budget; every orange or red bar is a clan exit that
             cost more than it had to.
           </div>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <VarKey n="p" value={stats.p} note="houses visited" />
-          <VarKey n="c" value={stats.c} note="villages fully lapped" />
+          <VarKey n="c" value={stats.c} note="clans fully lapped" />
           <VarKey n="v" value={stats.v} note="2-loop regions entered" />
           <VarKey n="w" value={stats.wt} note="characters appended" />
         </div>
@@ -865,7 +865,7 @@ export function LiveChecker() {
         {finished && !custom && (
           <div className="animate-pop border-4 border-accent bg-[#f1ecff] px-4 py-3 shadow-[5px_5px_0_#5b3fbf]">
             Final tally: length = 6 + <V n="w">w</V> = {6 + stats.wt}. The walk used{" "}
-            <V n="v">v</V> = {stats.v} regions and completed <V n="c">c</V> = {stats.c} villages,
+            <V n="v">v</V> = {stats.v} regions and completed <V n="c">c</V> = {stats.c} clans,
             and the inequality holds with total cost <V n="w">w</V> = {stats.wt}.
           </div>
         )}
@@ -917,10 +917,10 @@ const CASE_B_STAGES = [
     head: "Count the seats",
     body: (
       <>
-        Each 2-loop region holds exactly 30 houses, which is exactly 5 whole villages. If the
+        Each 2-loop region holds exactly 30 houses, which is exactly 5 whole clans. If the
         traveller opens <V n="v">v</V> = 24 regions, those regions have room for 24 × 30 ={" "}
-        <strong>720 houses</strong> — or, counting in villages, 24 × 5 = <strong>120 villages</strong>.
-        The world contains exactly 720 houses in 120 villages. The capacity matches the world
+        <strong>720 houses</strong> — or, counting in clans, 24 × 5 = <strong>120 clans</strong>.
+        The world contains exactly 720 houses in 120 clans. The capacity matches the world
         with nothing to spare.
       </>
     ),
@@ -941,10 +941,10 @@ const CASE_B_STAGES = [
     head: "So no two regions may overlap",
     body: (
       <>
-        Here is the squeeze. 24 regions provide exactly 120 village-seats and there are exactly
-        120 villages. If two regions were to share even one village, they would waste a seat —
-        the 24 regions would then reach at most 119 villages, and some village would be stranded
-        with no way in. Below, two regions have been forced to overlap: watch a village go dark.
+        Here is the squeeze. 24 regions provide exactly 120 clan-seats and there are exactly
+        120 clans. If two regions were to share even one clan, they would waste a seat — the 24
+        regions would then reach at most 119 clans, and some clan would be stranded with no way in.
+        Below, two regions have been forced to overlap: watch a clan go dark.
       </>
     ),
   },
@@ -953,8 +953,8 @@ const CASE_B_STAGES = [
     head: "The only survivor is a perfect tiling",
     body: (
       <>
-        Overlap is banned, so the 24 regions must fit together like tiles on a floor: every
-        village painted exactly once, no gaps and no double-cover. Mathematicians call this an{" "}
+        Overlap is banned, so the 24 regions must fit together like tiles on a floor: every clan
+        painted exactly once, no gaps and no double-cover. Mathematicians call this an{" "}
         <strong>exact cover</strong>. Watch a genuine one being laid down, region by region.
       </>
     ),
@@ -964,21 +964,21 @@ const CASE_B_STAGES = [
     head: "A tiling takes away all the freedom",
     body: (
       <>
-        Each village belongs to {COVER.perWheel} different regions in general, but in a tiling
-        only one of them is chosen — so each village has exactly <strong>one</strong> open gate.
-        A gate is the only way in, so the traveller enters each village at a fixed house, and
+        Each clan belongs to {COVER.perWheel} different regions in general, but in a tiling only
+        one of them is chosen — so each clan has exactly <strong>one</strong> open gate. A gate is
+        the only way in, so the traveller enters each clan at a fixed house, and
         since he cannot come back through a second gate, he must lap all six houses in one go.
-        That is 120 villages × 5 cheap steps = <strong>600 characters</strong> locked in before
-        he has travelled between any villages at all.
+        That is 120 clans × 5 cheap steps = <strong>600 characters</strong> locked in before he
+        has travelled between any clans at all.
       </>
     ),
   },
   {
     tag: "Step 6",
-    head: "One freedom left: the order of the villages",
+     head: "One freedom left: the order of the clans",
     body: (
       <>
-        The only choice remaining is the order in which to visit the 120 villages, paying the
+        The only choice remaining is the order in which to visit the 120 clans, paying the
         hop cost between consecutive ones. That is a small travelling-salesman puzzle. There are
         exactly <strong>10,068</strong> possible tilings; relabelling the six symbols groups them
         into <strong>29</strong> genuinely different ones, and an exact solver checked all 29.
@@ -1009,7 +1009,7 @@ export function ExactCoverDemo() {
   const collisionStage = stage === 2;
 
   // For the collision picture: pretend region 1 was swallowed by region 0, so
-  // one of its villages is double-booked and another has nobody left to cover it.
+  // one of its clans is double-booked and another has nobody left to cover it.
   const collisionCells = useMemo<TilingCell[]>(() => {
     const region1 = COVER.cells
       .map((c, i) => ({ c, i }))
@@ -1082,9 +1082,9 @@ export function ExactCoverDemo() {
         {stage === 0 && (
           <div className="grid gap-3 sm:grid-cols-3">
             {[
-              ["1 region", "30 houses", "= 5 villages"],
-              ["24 regions", "720 houses", "= 120 villages"],
-              ["the world", "720 houses", "= 120 villages"],
+              ["1 region", "30 houses", "= 5 clans"],
+              ["24 regions", "720 houses", "= 120 clans"],
+              ["the world", "720 houses", "= 120 clans"],
             ].map(([a, b, c], i) => (
               <div
                 key={a}
@@ -1123,12 +1123,12 @@ export function ExactCoverDemo() {
                   collisionStage
                     ? "What overlap would cost you"
                     : stage >= 4
-                      ? "A finished tiling · 24 regions, 120 villages"
-                      : "The tiling board · 120 villages"
+                      ? "A finished tiling · 24 regions, 120 clans"
+                      : "The tiling board · 120 clans"
                 }
                 subtitle={
                   collisionStage
-                    ? "two regions share a village, so one village is stranded"
+                    ? "two regions share a clan, so one clan is stranded"
                     : undefined
                 }
               />
@@ -1148,7 +1148,7 @@ export function ExactCoverDemo() {
         {stage === 4 && (
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="border-3 border-ink bg-[#fffbe9] px-4 py-3 shadow-[3px_3px_0_#1d1e33]">
-              <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-ink-soft">gates per village</div>
+              <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-ink-soft">gates per clan</div>
               <div className="font-mono text-2xl font-bold">1</div>
             </div>
             <div className="border-3 border-ink bg-[#fffbe9] px-4 py-3 shadow-[3px_3px_0_#1d1e33]">
@@ -1231,7 +1231,7 @@ export function ExactCoverDemo() {
         {stage === 6 && (
           <div className="animate-pop border-4 border-emerald-700 bg-[#e3f2d6] px-4 py-4 shadow-[5px_5px_0_#1f7a5c]">
             <TeX block>
-              {"\\textcolor{#b23a48}{w} \\;=\\; \\underbrace{600}_{\\text{forced laps}} \\;+\\; \\underbrace{265}_{\\text{cheapest village order}} \\;=\\; 865 \\;>\\; 861"}
+              {"\\textcolor{#b23a48}{w} \\;=\\; \\underbrace{600}_{\\text{forced laps}} \\;+\\; \\underbrace{265}_{\\text{cheapest clan order}} \\;=\\; 865 \\;>\\; 861"}
             </TeX>
             <div className="mt-1 leading-relaxed">
               Case A needed 25 or more regions and cost at least 862. Case B allows exactly 24 and
