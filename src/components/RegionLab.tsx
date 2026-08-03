@@ -174,38 +174,31 @@ function N4FederationView({ model, selected, onSelect }: { model: RegionModel; s
           const visible = selectedRegion !== null || active;
           if (!visible) return null;
           const color = selectedRegion !== null ? (active ? "#2aa198" : "#cb4b16") : FEDERATION_COLORS[cycleIndex % FEDERATION_COLORS.length];
-          const particles = Array.from({ length: 96 }, (_, particle) => {
-            const theta = ((particle * 137 + regionId * 41) % 360) * (Math.PI / 180);
-            const phi = ((particle * 83 + regionId * 17) % 180) * (Math.PI / 180);
-            const radial = 0.32 + ((particle * 47) % 100) / 100 * 0.68;
-            return projectLabPoint(
-              {
-                x: center.x + Math.cos(theta) * Math.sin(phi) * radiusX * radial,
-                y: center.y + Math.sin(theta) * Math.sin(phi) * radiusY * radial,
-                z: center.z + Math.cos(phi) * radiusZ * radial,
-              },
-              camera.yaw,
-              camera.pitch,
-            );
-          }).sort((a, b) => b.depth - a.depth);
-          const rings = [
-            Array.from({ length: 25 }, (_, point) => {
-              const angle = (point * Math.PI * 2) / 24;
-              return projectLabPoint({ x: center.x + Math.cos(angle) * radiusX, y: center.y + Math.sin(angle) * radiusY, z: center.z }, camera.yaw, camera.pitch);
-            }),
-            Array.from({ length: 25 }, (_, point) => {
-              const angle = (point * Math.PI * 2) / 24;
-              return projectLabPoint({ x: center.x + Math.cos(angle) * radiusX, y: center.y, z: center.z + Math.sin(angle) * radiusZ }, camera.yaw, camera.pitch);
-            }),
-            Array.from({ length: 25 }, (_, point) => {
-              const angle = (point * Math.PI * 2) / 24;
-              return projectLabPoint({ x: center.x, y: center.y + Math.cos(angle) * radiusY, z: center.z + Math.sin(angle) * radiusZ }, camera.yaw, camera.pitch);
-            }),
+          const bounds = [
+            projectLabPoint({ x: center.x - radiusX, y: center.y, z: center.z }, camera.yaw, camera.pitch),
+            projectLabPoint({ x: center.x + radiusX, y: center.y, z: center.z }, camera.yaw, camera.pitch),
+            projectLabPoint({ x: center.x, y: center.y - radiusY, z: center.z }, camera.yaw, camera.pitch),
+            projectLabPoint({ x: center.x, y: center.y + radiusY, z: center.z }, camera.yaw, camera.pitch),
+            projectLabPoint({ x: center.x, y: center.y, z: center.z - radiusZ }, camera.yaw, camera.pitch),
+            projectLabPoint({ x: center.x, y: center.y, z: center.z + radiusZ }, camera.yaw, camera.pitch),
           ];
+          const minX = Math.min(...bounds.map((point) => point.x));
+          const maxX = Math.max(...bounds.map((point) => point.x));
+          const minY = Math.min(...bounds.map((point) => point.y));
+          const maxY = Math.max(...bounds.map((point) => point.y));
+          const ellipseCenter = projectLabPoint(center, camera.yaw, camera.pitch);
+          const gradientId = `federation-cloud-${regionId}`;
           return (
             <g key={regionId}>
-              {particles.map((point, particle) => <circle key={particle} cx={point.x} cy={point.y} r={Math.max(1.5, 3.6 - point.depth * 0.02)} fill={color} opacity="0.82" />)}
-              {rings.map((ring, ringId) => <polyline key={ringId} points={ring.map((point) => `${point.x},${point.y}`).join(" ")} fill="none" stroke={color} strokeWidth="2" strokeDasharray="4 5" opacity="0.95" />)}
+              <defs>
+                <radialGradient id={gradientId} cx="32%" cy="27%" r="72%">
+                  <stop offset="0%" stopColor="#fff4cb" stopOpacity={active ? "0.9" : "0.12"} />
+                  <stop offset="40%" stopColor={color} stopOpacity={active ? "0.88" : "0.08"} />
+                  <stop offset="100%" stopColor={color} stopOpacity="0" />
+                </radialGradient>
+              </defs>
+              <ellipse cx={ellipseCenter.x} cy={ellipseCenter.y} rx={(maxX - minX) / 2} ry={(maxY - minY) / 2} fill={`url(#${gradientId})`} opacity={active ? "1" : "0.45"} />
+              <ellipse cx={ellipseCenter.x - (maxX - minX) * 0.08} cy={ellipseCenter.y - (maxY - minY) * 0.1} rx={(maxX - minX) / 2} ry={(maxY - minY) / 2} fill="none" stroke={color} strokeWidth={active ? "2" : "1"} opacity={active ? "0.8" : "0.12"} />
               {memberIds.map((clanId) => {
                 const regionCenter = projectLabPoint({ ...center, z: 1.35 }, camera.yaw, camera.pitch);
                 return <line key={clanId} x1={projectedBase[clanId].x} y1={projectedBase[clanId].y} x2={regionCenter.x} y2={regionCenter.y} stroke={clanId === selected ? "#fff176" : color} strokeWidth={clanId === selected ? 4 : 2} opacity="0.9" />;
