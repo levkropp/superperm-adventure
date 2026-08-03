@@ -1,0 +1,485 @@
+/* ------------------------------------------------------------------ */
+/*  Superpermutation toolkit                                           */
+/*  All graph/walk machinery used by the interactive article.          */
+/* ------------------------------------------------------------------ */
+
+export type Perm = number[];
+export type Str = (number | string)[];
+
+export const key = (p: Perm | Str): string => p.join("");
+
+/** All permutations of 1..n in lexicographic order. */
+export function allPerms(n: number): Perm[] {
+  const res: Perm[] = [];
+  const cur: number[] = [];
+  const used = new Array<boolean>(n + 1).fill(false);
+  const rec = () => {
+    if (cur.length === n) {
+      res.push([...cur]);
+      return;
+    }
+    for (let d = 1; d <= n; d++) {
+      if (!used[d]) {
+        used[d] = true;
+        cur.push(d);
+        rec();
+        cur.pop();
+        used[d] = false;
+      }
+    }
+  };
+  rec();
+  return res;
+}
+
+/** Longest k such that the last k symbols of a equal the first k of b. */
+export function overlap(a: Perm, b: Perm): number {
+  const n = a.length;
+  for (let k = n - 1; k >= 1; k--) {
+    let ok = true;
+    for (let i = 0; i < k; i++) {
+      if (a[n - k + i] !== b[i]) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok) return k;
+  }
+  return 0;
+}
+
+/** Symbols that must be appended to morph a into b. */
+export const weight = (a: Perm, b: Perm): number => a.length - overlap(a, b);
+
+/** The string obtained by chaining a path of permutations with maximum overlap. */
+export function pathToString(path: Perm[]): number[] {
+  if (path.length === 0) return [];
+  const s: number[] = [...path[0]];
+  for (let i = 1; i < path.length; i++) {
+    const w = weight(path[i - 1], path[i]);
+    s.push(...path[i].slice(path[i].length - w));
+  }
+  return s;
+}
+
+/** First-occurrence path of permutations inside a string. */
+export function stringToPath(s: Str, n: number): Perm[] {
+  const seen: Perm[] = [];
+  const set = new Set<string>();
+  for (let i = 0; i <= s.length - n; i++) {
+    const win = s.slice(i, i + n).map(Number);
+    if (new Set(win).size === n) {
+      const k = win.join("");
+      if (!set.has(k)) {
+        set.add(k);
+        seen.push(win);
+      }
+    }
+  }
+  return seen;
+}
+
+/** Full coverage report of a string for permutations of n symbols. */
+export function coverage(s: Str, n: number) {
+  const perms = allPerms(n);
+  const need = new Set(perms.map(key));
+  const found: { perm: Perm; pos: number }[] = [];
+  const seen = new Set<string>();
+  for (let i = 0; i <= s.length - n; i++) {
+    const win = s.slice(i, i + n).map(Number);
+    const k = win.join("");
+    if (need.has(k) && !seen.has(k)) {
+      seen.add(k);
+      found.push({ perm: win, pos: i });
+    }
+  }
+  return {
+    total: perms.length,
+    found: found.length,
+    missing: perms.filter((p) => !seen.has(key(p))),
+    foundList: found,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/*  The standard (greedy block) construction — the classical 873.      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * S_n = chain the blocks "π n π" (π a permutation of 1..n-1, taken in the
+ * order they first appear in S_{n-1}), overlapping each block as much as
+ * possible with the growing string. Gives lengths 3, 9, 33, 153, 873 …
+ */
+export function standardSuperperm(n: number): number[] {
+  if (n === 1) return [1];
+  const prev = standardSuperperm(n - 1);
+  const order = stringToPath(prev, n - 1);
+  const s: number[] = [];
+  for (const pi of order) {
+    const block = [...pi, n, ...pi];
+    if (s.length === 0) {
+      s.push(...block);
+      continue;
+    }
+    let k = 0;
+    const max = Math.min(s.length, block.length) - 1;
+    for (let t = max; t >= 1; t--) {
+      let ok = true;
+      for (let i = 0; i < t; i++) {
+        if (s[s.length - t + i] !== block[i]) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) {
+        k = t;
+        break;
+      }
+    }
+    s.push(...block.slice(k));
+  }
+  return s;
+}
+
+export const sumFactorials = (n: number): number =>
+  Array.from({ length: n }, (_, i) => i + 1).reduce((a, f) => a + factorial(f), 0);
+export const factorial = (n: number): number => (n <= 1 ? 1 : n * factorial(n - 1));
+
+/* ------------------------------------------------------------------ */
+/*  Rotations, 1-cycles (wheels) and 2-loops (n = 6 machinery).        */
+/* ------------------------------------------------------------------ */
+
+/** Move the first symbol to the end — the only cost-1 move. */
+export const rot = (p: Perm): Perm => [...p.slice(1), p[0]];
+/** "Kick": move the first two symbols to the end, swapped. */
+export const kick = (p: Perm): Perm => [...p.slice(2), p[1], p[0]];
+
+/** The rotation wheel containing p: 6 permutations joined by cost-1 moves. */
+export function wheelOf(p: Perm): Perm[] {
+  const out: Perm[] = [p];
+  for (let i = 1; i < p.length; i++) out.push(rot(out[i - 1]));
+  return out;
+}
+
+/** The 2-loop generated by start: rotate (n-1) times, kick, repeat. */
+export function twoloopOf(start: Perm, n: number): Set<string> {
+  const seen = new Set<string>();
+  let u = start;
+  while (!seen.has(key(u))) {
+    seen.add(key(u));
+    for (let i = 0; i < n - 1; i++) {
+      u = rot(u);
+      seen.add(key(u));
+    }
+    u = kick(u);
+  }
+  return seen;
+}
+
+export interface LoopStructure {
+  perms: Perm[];
+  loops: Set<string>[]; // each loop: set of permutation keys (size 30)
+  loopMembers: Perm[][]; // ordered members (twoloop walk order) per loop
+  genOf: Map<string, number>; // permutation key -> loop id
+  gensOfLoop: Set<string>[]; // per loop: its generators
+  wheels: Perm[][]; // the 120 rotation wheels
+  wheelOf: Map<string, number>;
+}
+
+/** Full n=6 loop machinery: 144 two-loops × 30 vertices, 5 generators each. */
+export function buildLoopStructure(n: number): LoopStructure {
+  const perms = allPerms(n);
+  const canon = (L: Set<string>) => [...L].sort().join("|");
+  const loops = new Map<string, number>();
+  const loopsList: Set<string>[] = [];
+  const loopMembers: Perm[][] = [];
+  const genOf = new Map<string, number>();
+
+  for (const p of perms) {
+    const L = twoloopOf(p, n);
+    const c = canon(L);
+    let id = loops.get(c);
+    if (id === undefined) {
+      id = loopsList.length;
+      loops.set(c, id);
+      loopsList.push(L);
+      loopMembers.push([...L].map((k) => k.split("").map(Number)));
+    }
+    genOf.set(key(p), id);
+  }
+
+  const gensOfLoop: Set<string>[] = loopsList.map(() => new Set());
+  for (const p of perms) gensOfLoop[genOf.get(key(p))!].add(key(p));
+
+  // rotation wheels (1-cycles): 120 disjoint 6-cycles of cost-1 moves
+  const wheels: Perm[][] = [];
+  const wheelOf = new Map<string, number>();
+  const seenW = new Set<string>();
+  for (const p of perms) {
+    if (seenW.has(key(p))) continue;
+    const w = wheelOfPerm(p);
+    for (const m of w) seenW.add(key(m));
+    for (const m of w) wheelOf.set(key(m), wheels.length);
+    wheels.push(w);
+  }
+
+  return { perms, loops: loopsList, loopMembers, genOf, gensOfLoop, wheels, wheelOf };
+}
+
+export function wheelOfPerm(p: Perm): Perm[] {
+  const out: Perm[] = [p];
+  for (let i = 1; i < p.length; i++) out.push(rot(out[i - 1]));
+  return out;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Walk statistics                                                    */
+/* ------------------------------------------------------------------ */
+
+export interface WalkStats {
+  p: number;
+  wt: number;
+  R: number; // arcs = maximal runs of cost-1 transitions
+  jumps: number; // transitions of cost >= 2
+  targets: Perm[]; // jump destinations
+  v: number; // distinct 2-loops entered by jumps
+  wheelRuns: number[]; // run lengths of cost-1 transitions per wheel
+}
+
+export function walkStats(path: Perm[], struct: LoopStructure): WalkStats {
+  let wt = 0;
+  let R = 1;
+  let jumps = 0;
+  const targets: Perm[] = [];
+  const entered = new Set<number>();
+  for (let i = 0; i < path.length - 1; i++) {
+    const w = weight(path[i], path[i + 1]);
+    wt += w;
+    if (w === 1) continue;
+    R++;
+    jumps++;
+    targets.push(path[i + 1]);
+    const id = struct.genOf.get(key(path[i + 1]));
+    if (id !== undefined) entered.add(id);
+  }
+  return { p: path.length, wt, R, jumps, targets, v: entered.size, wheelRuns: [] };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Exact covers: partitioning the 120 wheels into 24 two-loops         */
+/* ------------------------------------------------------------------ */
+
+/** For each 2-loop, the set of wheel ids it is built from (always 5 at n=6). */
+export function loopWheelSets(struct: LoopStructure): number[][] {
+  return struct.loops.map((L) => {
+    const s = new Set<number>();
+    for (const k of L) s.add(struct.wheelOf.get(k)!);
+    return [...s].sort((a, b) => a - b);
+  });
+}
+
+/**
+ * An exact cover: 24 two-loops whose wheels partition all 120 wheels.
+ * Plain Algorithm-X backtracking; each wheel lies in exactly 6 loops, so the
+ * search is tiny.
+ */
+export function findExactCover(struct: LoopStructure): number[] | null {
+  const loopWheels = loopWheelSets(struct);
+  const numWheels = struct.wheels.length;
+
+  const loopsContaining: number[][] = Array.from({ length: numWheels }, () => []);
+  loopWheels.forEach((ws, li) => ws.forEach((w) => loopsContaining[w].push(li)));
+
+  const covered = new Array<boolean>(numWheels).fill(false);
+  const chosen: number[] = [];
+
+  const rec = (): boolean => {
+    let target = -1;
+    for (let i = 0; i < numWheels; i++) {
+      if (!covered[i]) {
+        target = i;
+        break;
+      }
+    }
+    if (target === -1) return true;
+
+    for (const li of loopsContaining[target]) {
+      if (loopWheels[li].some((w) => covered[w])) continue;
+      loopWheels[li].forEach((w) => (covered[w] = true));
+      chosen.push(li);
+      if (rec()) return true;
+      chosen.pop();
+      loopWheels[li].forEach((w) => (covered[w] = false));
+    }
+    return false;
+  };
+
+  return rec() ? [...chosen] : null;
+}
+
+/** How many 2-loops contain each wheel (6 at n = 6). */
+export function loopsPerWheel(struct: LoopStructure): number {
+  const sets = loopWheelSets(struct);
+  const counts = new Array<number>(struct.wheels.length).fill(0);
+  sets.forEach((ws) => ws.forEach((w) => counts[w]++));
+  return counts[0];
+}
+
+/* ------------------------------------------------------------------ */
+
+export interface FullStats {
+  p: number; // permutations visited
+  wt: number; // total appended characters
+  R: number; // arcs (maximal runs of cost-1 moves)
+  jumps: number; // transitions of cost >= 2
+  v: number; // distinct 2-loops entered
+  c: number; // completed wheels (arcs that traverse all 6 of a wheel)
+  targets: Perm[];
+  arcLengths: number[];
+}
+
+/**
+ * Full HPV bookkeeping for a walk.
+ *
+ * Cost-1 moves are rotations, so an arc never leaves its wheel and can hold at
+ * most n distinct permutations; an arc of exactly n vertices therefore
+ * *completes* that wheel.
+ */
+export function fullWalkStats(path: Perm[], struct: LoopStructure): FullStats {
+  const n = path[0]?.length ?? 6;
+  let wt = 0;
+  let jumps = 0;
+  let c = 0;
+  let arcLen = 1;
+  const arcLengths: number[] = [];
+  const targets: Perm[] = [];
+  const entered = new Set<number>();
+
+  for (let i = 0; i < path.length - 1; i++) {
+    const w = weight(path[i], path[i + 1]);
+    wt += w;
+    if (w === 1) {
+      arcLen++;
+      continue;
+    }
+    arcLengths.push(arcLen);
+    if (arcLen === n) c++;
+    arcLen = 1;
+    jumps++;
+    targets.push(path[i + 1]);
+    const id = struct.genOf.get(key(path[i + 1]));
+    if (id !== undefined) entered.add(id);
+  }
+  if (path.length > 0) {
+    arcLengths.push(arcLen);
+    if (arcLen === n) c++;
+  }
+
+  return {
+    p: path.length,
+    wt,
+    R: arcLengths.length,
+    jumps,
+    v: entered.size,
+    c,
+    targets,
+    arcLengths,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Step classification, for the "why you must kick" argument           */
+/* ------------------------------------------------------------------ */
+
+export type StepKind =
+  /** cost 1, stays in the village */
+  | "rotation"
+  /** cost >= 2 but still inside the village: skips houses you still owe */
+  | "skip"
+  /** cost 2, lands in a different village: the only cheap exit */
+  | "kick"
+  /** cost >= 3, lands in a different village */
+  | "costly-exit";
+
+/**
+ * Classify a move by price *and* by whether it actually leaves the village.
+ * Note that rot^3, rot^4 and rot^5 cost 3, 4 and 5 yet never leave, so cost
+ * alone cannot decide this.
+ */
+export function classifyStep(u: Perm, v: Perm): StepKind {
+  const w = weight(u, v);
+  const sameWheel = wheelOfPerm(u).some((r) => key(r) === key(v));
+  if (sameWheel) return w === 1 ? "rotation" : "skip";
+  return w === 2 ? "kick" : "costly-exit";
+}
+
+export interface DepartureLedger {
+  steps: number;
+  rotations: number;
+  skips: number;
+  departures: number;
+  kickDepartures: number;
+  costlyDepartures: number;
+  /** Characters paid above the cheapest legal price for each move. */
+  wasted: number;
+  wt: number;
+}
+
+/** Count how a walk spends its money, separating exits from in-village moves. */
+export function departureLedger(path: Perm[]): DepartureLedger {
+  let rotations = 0;
+  let skips = 0;
+  let kickDepartures = 0;
+  let costlyDepartures = 0;
+  let wasted = 0;
+  let wt = 0;
+
+  for (let i = 0; i < path.length - 1; i++) {
+    const w = weight(path[i], path[i + 1]);
+    wt += w;
+    switch (classifyStep(path[i], path[i + 1])) {
+      case "rotation":
+        rotations++;
+        break;
+      case "skip":
+        skips++;
+        wasted += w - 1;
+        break;
+      case "kick":
+        kickDepartures++;
+        break;
+      default:
+        costlyDepartures++;
+        wasted += w - 2;
+    }
+  }
+
+  return {
+    steps: Math.max(0, path.length - 1),
+    rotations,
+    skips,
+    departures: kickDepartures + costlyDepartures,
+    kickDepartures,
+    costlyDepartures,
+    wasted,
+    wt,
+  };
+}
+
+/** A random tour: any order of all permutations, chained greedily. Always valid. */
+export function randomTour(n: number, rng: () => number = Math.random): Perm[] {
+  const ps = allPerms(n);
+  for (let i = ps.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [ps[i], ps[j]] = [ps[j], ps[i]];
+  }
+  return ps;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Houston's 872-character superpermutation for n = 6 (2014).         */
+/*  Reproduced from the levkropp/superperm data directory.             */
+/* ------------------------------------------------------------------ */
+
+export const HOUSTON_872 =
+  "12345612345162345126345123645132645136245136425136452136451234651234156234152634152364152346152341652341256341253641253461253416253412653412356412354612354162354126354123654132654312645316243516243156243165243162543162453164253146253142653142563142536142531645231465231456231452631452361452316453216453126435126431526431256432156423154623154263154236154231654231564213564215362415362145362154362153462135462134562134652134625134621536421563421653421635421634521634251634215643251643256143256413256431265432165432615342613542613452613425613426513426153246513246531246351246315246312546321546325146325416325461325463124563214563241563245163245613245631246532146532416532461532641532614532615432651436251436521435621435261435216435214635214365124361524361254361245361243561243651423561423516423514623514263514236514326541362541365241356241352641352461352416352413654213654123";
