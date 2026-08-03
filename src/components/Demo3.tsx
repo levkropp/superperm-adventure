@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   HOUSTON_872,
   buildLoopStructure,
@@ -364,13 +364,13 @@ export function LoopExplorer() {
   const gens = STRUCT.gensOfLoop[loopId];
   return (
     <DemoErrorBoundary title="2-Loop Explorer Error">
-      <Panel label="Demo 11 · review: 2-loop region at n = 6 (30 houses in 5 clans)" className="space-y-4">
+      <Panel label="Demo 11 · review: 2-loop federation at n = 6 (30 houses in 5 clans)" className="space-y-4">
         <Note>
-          Review the idea at <TeX>n = 6</TeX>. We first met 2-loop regions at <TeX>n = 4</TeX>:
+          Review the idea at <TeX>n = 6</TeX>. We first met 2-loop federations at <TeX>n = 4</TeX>:
           clans are joined into circuits, and a kick bridge (cost 2) takes you from one clan to the
-          next. Five kicks bring you home, touring 30 permutations in a <strong>2-loop region</strong>.
-          There are 144 such regions in the world. Switch to the overworld to lift the six regions
-          containing the selected clan above a shared map.
+          next. Five kicks bring you home, touring 30 permutations in a <strong>2-loop federation</strong>.
+          There are 144 such federations in the world. Switch to the overworld to see all 120 clan islands
+          and 144 federation satellites; selecting a clan highlights its six federations.
         </Note>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -400,7 +400,7 @@ export function LoopExplorer() {
               zoomed (30 houses)
             </Btn>
             <Btn variant={zoom === "world" ? "primary" : "soft"} onClick={() => setZoom("world")}>
-              overworld (144 regions)
+              overworld (144 federations)
             </Btn>
           </div>
         </div>
@@ -427,8 +427,8 @@ export function LoopExplorer() {
         </Wide>
 
         <div className="border-4 border-gold bg-[#fff2cd] px-4 py-3 shadow-[5px_5px_0_#b26a12]">
-          Every 2-loop region has exactly <strong>5 generator gates</strong> (orange roofs). A traveller
-          arriving from outside can ONLY enter this region by landing on one of these five gates!
+          Every 2-loop federation has exactly <strong>5 generator gates</strong> (orange roofs). A traveller
+          arriving from outside can ONLY enter this federation by landing on one of these five gates!
         </div>
       </Panel>
     </DemoErrorBoundary>
@@ -505,24 +505,24 @@ export function ArcDemo() {
 
 export function RegionNeighborhoodDemo() {
   return (
-    <Panel label="Zoomed out · neighbouring 2-loop regions" className="space-y-4">
+    <Panel label="Zoomed out · neighbouring 2-loop federations" className="space-y-4">
       <Note>
         This board shows rotation clans rather than individual houses. One coloured tile
-        is one 2-loop region; each region contains five clans. Regions overlap in the full
-        720-house world, so a region is a neighbourhood, not an isolated island.
+        is one 2-loop federation; each federation contains five clans. Federations overlap in the full
+        720-house world, so a federation is a neighbourhood, not an isolated island.
       </Note>
       <Wide>
         <ExactCoverTilingMap
           cells={COVER.cells}
           revealedRegions={8}
           highlightRegion={0}
-          title="Neighbouring 2-loop regions"
-          subtitle="one colour = one 30-house region; five squares per region"
+          title="Neighbouring 2-loop federations"
+          subtitle="one colour = one 30-house federation; five squares per federation"
         />
       </Wide>
       <div className="border-4 border-gold bg-[#fff2cd] px-4 py-3 shadow-[5px_5px_0_#b26a12]">
-        In the full universe, every clan belongs to {COVER.perWheel} different possible regions.
-        Later, Case B will choose exactly one region for each clan.
+        In the full universe, every clan belongs to {COVER.perWheel} different possible federations.
+        Later, Case B will choose exactly one federation for each clan.
       </div>
     </Panel>
   );
@@ -530,18 +530,18 @@ export function RegionNeighborhoodDemo() {
 
 export function RegionCoverageDemo() {
   return (
-    <Panel label="Why 24 regions is the first possible number" className="space-y-4">
+    <Panel label="Why 24 federations is the first possible number" className="space-y-4">
       <Note>
-        One region contains 5 clans, and each clan contains 6 houses. Thus one region
-        accounts for 5 × 6 = 30 houses. To have enough region-capacity for all 720 houses,
-        you need 24 regions.
+        One federation contains 5 clans, and each clan contains 6 houses. Thus one federation
+        accounts for 5 × 6 = 30 houses. To have enough federation-capacity for all 720 houses,
+        you need 24 federations.
       </Note>
       <div className="grid gap-3 sm:grid-cols-4">
         {[
-          ["one region", "5 clans"],
+          ["one federation", "5 clans"],
           ["one clan", "6 houses"],
-          ["one region", "30 houses"],
-          ["twenty-four regions", "720 houses"],
+          ["one federation", "30 houses"],
+          ["twenty-four federations", "720 houses"],
         ].map(([a, b]) => (
           <div key={a} className="border-3 border-ink bg-[#fffbe9] p-3 text-center shadow-[3px_3px_0_#1d1e33]">
             <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-ink-soft">{a}</div>
@@ -553,14 +553,14 @@ export function RegionCoverageDemo() {
         <ExactCoverTilingMap
           cells={COVER.cells}
           revealedRegions={24}
-          title="24 regions have exactly enough room"
+          title="24 federations have exactly enough room"
           subtitle="24 × 5 clans = 120 clans = 720 houses"
         />
       </Wide>
       <div className="border-4 border-emerald-700 bg-[#e3f2d6] px-4 py-3 shadow-[5px_5px_0_#1f7a5c]">
-        This picture gives the right scale: 24 regions is the first number large enough to cover
+        This picture gives the right scale: 24 federations is the first number large enough to cover
         the whole world. The generator-gate argument above explains why jumps force at least
-        this many regions in the classical lower bound.
+        this many federations in the classical lower bound.
       </div>
     </Panel>
   );
@@ -572,28 +572,28 @@ export function RegionCoverageDemo() {
 
 const ABSORPTION_PRESETS: { label: string; jumps: number; regions: number; note: string }[] = [
   {
-    label: "try to cheat with 20 regions",
+    label: "try to cheat with 20 federations",
     jumps: 119,
     regions: 20,
-    note: "A real tour makes at least 119 jumps. Twenty regions offer only 100 gates, so 19 jumps have nowhere to land.",
+    note: "A real tour makes at least 119 jumps. Twenty federations offer only 100 gates, so 19 jumps have nowhere to land.",
   },
   {
-    label: "the legal minimum: 24 regions",
+    label: "the legal minimum: 24 federations",
     jumps: 119,
     regions: 24,
-    note: "Twenty-four regions offer 120 gates, just enough for 119 jumps. This is why v can never be smaller than 24.",
+    note: "Twenty-four federations offer 120 gates, just enough for 119 jumps. This is why v can never be smaller than 24.",
   },
   {
-    label: "a 100-jump walk on 19 regions",
+    label: "a 100-jump walk on 19 federations",
     jumps: 100,
     regions: 19,
-    note: "Even a walk with fewer jumps is not free: 100 jumps need 20 regions, so 19 leaves 5 jumps stranded.",
+    note: "Even a walk with fewer jumps is not free: 100 jumps need 20 federations, so 19 leaves 5 jumps stranded.",
   },
   {
-    label: "the same walk on 20 regions",
+    label: "the same walk on 20 federations",
     jumps: 100,
     regions: 20,
-    note: "Twenty regions is exactly enough for 100 jumps. Nothing is wrong with a 100-jump walk — it simply forces v ≥ 20.",
+    note: "Twenty federations is exactly enough for 100 jumps. Nothing is wrong with a 100-jump walk — it simply forces v ≥ 20.",
   },
 ];
 
@@ -610,10 +610,10 @@ export function AbsorptionDemo() {
 
   return (
     <DemoErrorBoundary title="Absorption Capacity Demo Error">
-      <Panel label="Demo 12 · absorption capacity: what happens if you try too few regions?" className="space-y-4">
+      <Panel label="Demo 12 · absorption capacity: what happens if you try too few federations?" className="space-y-4">
         <Note>
-          Each region offers exactly 5 gates, and every jump has to land on one. So the real
-          question is: <em>how few regions can a tour possibly get away with?</em> Pick a scenario
+          Each federation offers exactly 5 gates, and every jump has to land on one. So the real
+          question is: <em>how few federations can a tour possibly get away with?</em> Pick a scenario
           and watch the jumps arrive one at a time — when the gates run out, the remaining jumps
           have nowhere to go and the walk is impossible.
         </Note>
@@ -652,12 +652,12 @@ export function AbsorptionDemo() {
               onChange={(e) => setJumps(+e.target.value)}
               className="mt-2 w-full"
             />
-            <div className="font-mono text-[11px] text-ink-soft">needs ≥ {needed} regions</div>
+            <div className="font-mono text-[11px] text-ink-soft">needs ≥ {needed} federations</div>
           </div>
 
           <div className="border-3 border-ink bg-[#fffbe9] p-3 shadow-[3px_3px_0_#1d1e33]">
             <div className="flex justify-between font-mono text-sm font-bold">
-              <span>open 2-loop regions (v)</span>
+              <span>open 2-loop federations (v)</span>
               <span className="text-var-v">{regions}</span>
             </div>
             <input
@@ -693,13 +693,13 @@ export function AbsorptionDemo() {
 
         {overflow > 0 ? (
           <div className="animate-pop border-4 border-ember bg-[#ffe6da] px-4 py-3 shadow-[5px_5px_0_#b23a48]">
-            <strong>IMPOSSIBLE WALK:</strong> You have {jumps} jumps but only {regions} open regions ({capacity} gates).{" "}
+            <strong>IMPOSSIBLE WALK:</strong> You have {jumps} jumps but only {regions} open federations ({capacity} gates).{" "}
             <strong>{overflow} jumps are stranded</strong> in red with no gate to land on! You MUST open at least{" "}
-            <V n="v">v</V> = {needed} regions.
+            <V n="v">v</V> = {needed} federations.
           </div>
         ) : (
           <div className="border-4 border-emerald-700 bg-[#e3f2d6] px-4 py-3 shadow-[5px_5px_0_#1f7a5c]">
-            <strong>LEGAL CAPACITY:</strong> {regions} open regions provide {capacity} gates, which is enough to land all{" "}
+            <strong>LEGAL CAPACITY:</strong> {regions} open federations provide {capacity} gates, which is enough to land all{" "}
             {jumps} jumps legally. The absorption lemma <V n="v">v</V> ≥ ⌈(R−1)/5⌉ holds!
           </div>
         )}
@@ -709,7 +709,7 @@ export function AbsorptionDemo() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Demo 13 · watching the HPV inequality hold                         */
+/*  Demo 13 · watching the HPV inequality emerge                       */
 /* ------------------------------------------------------------------ */
 
 const WALKS: { label: string; path: number[][]; note: string }[] = [
@@ -741,14 +741,21 @@ export function LiveChecker() {
   const rhs = stats.p + stats.c + stats.v - 2;
   const holds = stats.wt >= rhs;
   const finished = player.step >= path.length;
+  const inequalityStatus = !finished ? "running..." : holds ? "HOLDS ✓" : "VIOLATED ✗";
+  const inequalityBox = !finished
+    ? "border-ink bg-[#f3ead0]"
+    : holds
+      ? "border-emerald-700 bg-[#e3f2d6] shadow-[5px_5px_0_#1f7a5c]"
+      : "border-ember bg-[#ffe6da]";
 
   return (
     <DemoErrorBoundary title="HPV Inequality Demo Error">
-      <Panel label="Demo 13 · watch the inequality hold character by character" className="space-y-4">
+      <Panel label="Demo 13 · watch the final inequality emerge" className="space-y-4">
         <Note>
           Press play and follow the traveller across all 720 houses. The four counters below are
           the exact variables in the HPV inequality <V n="w">w</V> ≥ <V n="p">p</V> + <V n="c">c</V> + <V n="v">v</V> − 2.
-          Watch them update dynamically as the walk progresses!
+          The inequality is a statement about the completed walk, not every intermediate prefix, so
+          the counters update during the animation but the check below is only evaluated at the end.
         </Note>
 
         <div className="flex flex-wrap gap-2">
@@ -768,7 +775,7 @@ export function LiveChecker() {
             random tour
           </Btn>
           <Btn variant={showRegions ? "primary" : "soft"} onClick={() => setShowRegions((s) => !s)}>
-            {showRegions ? "hide 2-loop groups" : "show 2-loop groups"}
+            {showRegions ? "hide 2-loop federations" : "show 2-loop federations"}
           </Btn>
         </div>
 
@@ -833,24 +840,22 @@ export function LiveChecker() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <VarKey n="p" value={stats.p} note="houses visited" />
           <VarKey n="c" value={stats.c} note="clans fully lapped" />
-          <VarKey n="v" value={stats.v} note="2-loop regions entered" />
+          <VarKey n="v" value={stats.v} note="2-loop federations entered" />
           <VarKey n="w" value={stats.wt} note="characters appended" />
         </div>
 
         <div
-          className={`border-4 px-4 py-3 font-mono text-[16px] ${
-            holds ? "border-emerald-700 bg-[#e3f2d6] shadow-[5px_5px_0_#1f7a5c]" : "border-ember bg-[#ffe6da]"
-          }`}
+          className={`border-4 px-4 py-3 font-mono text-[16px] ${inequalityBox}`}
         >
           <span className="var var-w">{stats.wt}</span> ≥ <span className="var var-p">{stats.p}</span> +{" "}
           <span className="var var-c">{stats.c}</span> + <span className="var var-v">{stats.v}</span> − 2 ={" "}
-          {rhs} &nbsp; {holds ? "HOLDS ✓" : "VIOLATED ✗"}
+          {rhs} &nbsp; {inequalityStatus}
         </div>
 
         {finished && !custom && (
           <div className="animate-pop border-4 border-accent bg-[#f1ecff] px-4 py-3 shadow-[5px_5px_0_#5b3fbf]">
             Final tally: length = 6 + <V n="w">w</V> = {6 + stats.wt}. The walk used{" "}
-            <V n="v">v</V> = {stats.v} regions and completed <V n="c">c</V> = {stats.c} clans,
+            <V n="v">v</V> = {stats.v} federations and completed <V n="c">c</V> = {stats.c} clans,
             and the inequality holds with total cost <V n="w">w</V> = {stats.wt}.
           </div>
         )}
@@ -896,14 +901,26 @@ const COVER = (() => {
   return { chosen, cells, labelToRegion, perWheel: loopsPerWheel(STRUCT) };
 })();
 
+// Representative display data for the simulation replay. This is not a certified orbit dataset.
+const REPRESENTATIVE_ORBIT_VALUES = [
+  267, 267, 267, 267, 267, 267, 267,
+  268, 268, 268, 268, 268,
+  269, 269, 269, 269,
+  270, 270, 270, 270, 270,
+  271, 271, 271,
+  272, 272,
+  273, 273,
+  265,
+] as const;
+
 const CASE_B_STAGES = [
   {
     tag: "Step 1",
     head: "Count the seats",
     body: (
       <>
-        Each 2-loop region holds exactly 30 houses, which is exactly 5 whole clans. If the
-        traveller opens <V n="v">v</V> = 24 regions, those regions have room for 24 × 30 ={" "}
+        Each 2-loop federation holds exactly 30 houses, which is exactly 5 whole clans. If the
+        traveller opens <V n="v">v</V> = 24 federations, those federations have room for 24 × 30 ={" "}
         <strong>720 houses</strong> — or, counting in clans, 24 × 5 = <strong>120 clans</strong>.
         The world contains exactly 720 houses in 120 clans. The capacity matches the world
         with nothing to spare.
@@ -915,21 +932,21 @@ const CASE_B_STAGES = [
     head: "Everyone must get a seat",
     body: (
       <>
-        The traveller has to visit all 720 houses, and he can only ever be inside a region he has
-        opened. So every single house must lie in one of his 24 regions. Nobody is allowed to be
+        The traveller has to visit all 720 houses, and he can only ever be inside a federation he has
+        opened. So every single house must lie in one of his 24 federations. Nobody is allowed to be
         left out.
       </>
     ),
   },
   {
     tag: "Step 3",
-    head: "So no two regions may overlap",
+    head: "So no two federations may overlap",
     body: (
       <>
-        Here is the squeeze. 24 regions provide exactly 120 clan-seats and there are exactly
-        120 clans. If two regions were to share even one clan, they would waste a seat — the 24
-        regions would then reach at most 119 clans, and some clan would be stranded with no way in.
-        Below, two regions have been forced to overlap: watch a clan go dark.
+        Here is the squeeze. 24 federations provide exactly 120 clan-seats and there are exactly
+        120 clans. If two federations were to share even one clan, they would waste a seat — the 24
+        federations would then reach at most 119 clans, and some clan would be stranded with no way in.
+        Below, two federations have been forced to overlap: watch a clan go dark.
       </>
     ),
   },
@@ -938,9 +955,9 @@ const CASE_B_STAGES = [
     head: "The only survivor is a perfect tiling",
     body: (
       <>
-        Overlap is banned, so the 24 regions must fit together like tiles on a floor: every clan
+        Overlap is banned, so the 24 federations must fit together like tiles on a floor: every clan
         painted exactly once, no gaps and no double-cover. Mathematicians call this an{" "}
-        <strong>exact cover</strong>. Watch a genuine one being laid down, region by region.
+        <strong>exact cover</strong>. Watch a genuine one being laid down, federation by federation.
       </>
     ),
   },
@@ -949,12 +966,12 @@ const CASE_B_STAGES = [
     head: "A tiling takes away all the freedom",
     body: (
       <>
-        Each clan belongs to {COVER.perWheel} different regions in general, but in a tiling only
-        one of them is chosen — so each clan has exactly <strong>one</strong> open gate. A gate is
-        the only way in, so the traveller enters each clan at a fixed house, and
-        since he cannot come back through a second gate, he must lap all six houses in one go.
-        That is 120 clans × 5 cheap steps = <strong>600 characters</strong> locked in before he
-        has travelled between any clans at all.
+        At <TeX>n = 6</TeX>, each clan belongs to {COVER.perWheel} possible federations. Case B opens
+        exactly 24 federations × 5 clans = <strong>120 clan-seats</strong>, matching the world&apos;s
+        120 clans. Therefore no two open federations can share a clan: every clan has exactly one
+        open gate <strong>(Finish your clans!)</strong>. That gate fixes the entry house, so the
+        traveller must lap all six houses in each clan before moving on. The forced cost is 120 clans
+        × 5 cheap steps = <strong>600 characters locked in</strong>, before any hop between clans.
       </>
     ),
   },
@@ -966,8 +983,9 @@ const CASE_B_STAGES = [
         The only choice remaining is the order in which to visit the 120 clans, paying the
         hop cost between consecutive ones. That is a small travelling-salesman puzzle. There are
         exactly <strong>10,068</strong> possible tilings; relabelling the six symbols groups them
-        into <strong>29</strong> genuinely different ones, and an exact solver checked all 29.
-        The cheapest ordering that exists anywhere costs <strong>265</strong>.
+        into <strong>29</strong> genuinely different ones. The chart below is a representative
+        simulation of the reported orbit-score range, not a fresh proof in this browser; the
+        reported cheapest ordering costs <strong>265</strong>.
       </>
     ),
   },
@@ -977,7 +995,7 @@ const CASE_B_STAGES = [
     body: (
       <>
         Add it up: <V n="w">w</V> = 600 + 265 = <strong>865</strong>. But a string of length 867
-        needs <V n="w">w</V> ≤ 861. A tour entering exactly 24 regions is therefore at least 4
+        needs <V n="w">w</V> ≤ 861. A tour entering exactly 24 federations is therefore at least 4
         characters too expensive, and Case B collapses.
       </>
     ),
@@ -986,6 +1004,31 @@ const CASE_B_STAGES = [
 
 export function ExactCoverDemo() {
   const [stage, setStage] = useState(0);
+  const [selectedOrbit, setSelectedOrbit] = useState(REPRESENTATIVE_ORBIT_VALUES.length - 1);
+  const [solverTick, setSolverTick] = useState(0);
+
+  const solverSteps = 20;
+  const selectedOrbitValue = REPRESENTATIVE_ORBIT_VALUES[selectedOrbit];
+
+  useEffect(() => {
+    if (stage !== 5) return;
+    setSolverTick(0);
+    const timer = window.setInterval(() => {
+      setSolverTick((tick) => Math.min(solverSteps, tick + 1));
+    }, 110);
+    return () => window.clearInterval(timer);
+  }, [selectedOrbit, stage]);
+
+  const solverFinished = solverTick === solverSteps;
+  const candidateRoutes = Math.min(3420, solverTick * 171);
+  const currentBest = solverFinished
+    ? selectedOrbitValue
+    : selectedOrbitValue + Math.max(1, Math.ceil((solverSteps - solverTick) * 1.35));
+  const replayLowerBound = Math.min(
+    selectedOrbitValue - 2,
+    256 + Math.floor((selectedOrbitValue - 257) * solverTick / solverSteps),
+  );
+  const lowerBound = solverFinished ? selectedOrbitValue : replayLowerBound === 264 ? 263 : replayLowerBound;
 
   // Region-by-region reveal used by stage 4 onwards.
   const laying = useStepper(24, { speed: 260 });
@@ -1020,13 +1063,8 @@ export function ExactCoverDemo() {
     stage < 3 ? 0 : stage === 3 ? laying.step : 24;
 
   return (
-    <DemoErrorBoundary title="Case B demo error">
-      <Panel label="Demo 14 · Case B, one step at a time" className="space-y-4">
-        <Note>
-          This is the part of the proof that sounds hardest and is actually the most concrete.
-          Take it one step at a time; each step is just counting.
-        </Note>
-
+      <DemoErrorBoundary title="Case B demo error">
+        <Panel label="Demo 14 · Case B, one step at a time" className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           {CASE_B_STAGES.map((_, i) => (
             <button
@@ -1067,8 +1105,8 @@ export function ExactCoverDemo() {
         {stage === 0 && (
           <div className="grid gap-3 sm:grid-cols-3">
             {[
-              ["1 region", "30 houses", "= 5 clans"],
-              ["24 regions", "720 houses", "= 120 clans"],
+              ["1 federation", "30 houses", "= 5 clans"],
+              ["24 federations", "720 houses", "= 120 clans"],
               ["the world", "720 houses", "= 120 clans"],
             ].map(([a, b, c], i) => (
               <div
@@ -1096,37 +1134,29 @@ export function ExactCoverDemo() {
                 speed={laying.speed}
                 onSpeed={laying.setSpeed}
                 playLabel="lay the tiles"
-                label={`${laying.step}/24 regions placed`}
+                label={`${laying.step}/24 federations placed`}
               />
             )}
-            <Wide>
-              <ExactCoverTilingMap
-                cells={collisionStage ? collisionCells : COVER.cells}
-                revealedRegions={collisionStage ? 24 : revealed}
-                collision={collisionStage ? collisionMarks : null}
-                title={
-                  collisionStage
-                    ? "What overlap would cost you"
-                    : stage >= 4
-                      ? "A finished tiling · 24 regions, 120 clans"
-                      : "The tiling board · 120 clans"
-                }
-                subtitle={
-                  collisionStage
-                    ? "two regions share a clan, so one clan is stranded"
-                    : undefined
-                }
-              />
-            </Wide>
+              {stage <= 3 && (
+                <Wide>
+                  <ExactCoverTilingMap
+                    cells={collisionStage ? collisionCells : COVER.cells}
+                    revealedRegions={collisionStage ? 24 : revealed}
+                    collision={collisionStage ? collisionMarks : null}
+                    title={collisionStage ? "What overlap would cost you" : "The federation tiling board · 120 clans"}
+                    subtitle={collisionStage ? "two federations share a clan, so one clan is stranded" : undefined}
+                  />
+                </Wide>
+              )}
           </>
         )}
 
         {collisionStage && collisionMarks && (
           <div className="border-4 border-ember bg-[#ffe6da] px-4 py-3 shadow-[5px_5px_0_#b23a48]">
-            The purple square is claimed twice. Because the 24 regions only ever had 120 seats,
-            that double-booking leaves the red square with a question mark: no region contains it,
+            The purple square is claimed twice. Because the 24 federations only ever had 120 seats,
+            that double-booking leaves the red square with a question mark: no federation contains it,
             so the traveller can never legally enter it. To reach it he would have to open a{" "}
-            <strong>25th region</strong> — and that is Case A, which we have already ruled out.
+            <strong>25th federation</strong> — and that is Case A, which we have already ruled out.
           </div>
         )}
 
@@ -1149,25 +1179,14 @@ export function ExactCoverDemo() {
 
         {stage === 5 && (
           <div className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-3">
-              {[
-                ["possible tilings", "10,068"],
-                ["after symmetry", "29"],
-                ["cheapest ordering", "265"],
-              ].map(([a, b]) => (
-                <div key={a} className="border-3 border-ink bg-[#fffbe9] px-4 py-3 shadow-[3px_3px_0_#1d1e33]">
-                  <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-ink-soft">{a}</div>
-                  <div className="font-mono text-2xl font-bold">{b}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Mini TSP bar chart: 29 orbits, one bar each */}
             <div className="overflow-x-auto border-3 border-ink bg-[#f3ead0] p-4 shadow-[3px_3px_0_#1d1e33]">
-              <div className="mb-2 font-mono text-[12px] font-bold uppercase tracking-wider text-ink-soft">
-                Orbit TSP lower bounds (29 orbits × CP‑SAT certified)
+              <div className="mb-1 font-mono text-[12px] font-bold uppercase tracking-wider text-ink-soft">
+                Representative 29-orbit chart · simulation data
               </div>
-              <svg viewBox="0 0 860 220" className="w-full min-w-[760px]" role="img" aria-label="orbit TSP lower bound chart">
+              <div className="mb-2 font-mono text-[11px] text-ink-soft">
+                 Click a bar to replay the representative score for that orbit.
+              </div>
+              <svg viewBox="0 0 860 220" className="w-full min-w-[760px]" role="img" aria-label="representative 29-orbit score chart">
                 <line x1="48" y1="170" x2="48" y2="20" stroke="#1d1e33" strokeWidth="2" />
                 <line x1="48" y1="170" x2="850" y2="170" stroke="#1d1e33" strokeWidth="2" />
                 {[260, 265, 270, 275].map((v) => {
@@ -1179,29 +1198,40 @@ export function ExactCoverDemo() {
                     </g>
                   );
                 })}
-                {[
-                  267, 267, 267, 267, 267, 267, 267, 267,
-                  268, 268, 268, 268, 268,
-                  269, 269, 269, 269,
-                  270, 270, 270, 270, 270,
-                  271, 271, 271,
-                  272, 272,
-                  273, 273,
-                  265,
-                ].map((val, i) => {
+                {REPRESENTATIVE_ORBIT_VALUES.map((val, i) => {
                   const x = 60 + i * 27;
                   const h = ((val - 256) / 20) * 140;
                   const y = 170 - h;
                   const fill = val === 265 ? "#e8615d" : val <= 269 ? "#f0aa4f" : "#65c5a2";
+                  const selected = i === selectedOrbit;
                   return (
-                    <g key={i}>
-                      <rect x={x - 10} y={y} width="20" height={h} fill={fill} stroke="#0b1c1c" strokeWidth="1" />
+                    <g
+                      key={i}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Orbit ${i + 1}, representative score ${val}`}
+                      aria-pressed={selected}
+                      onClick={() => setSelectedOrbit(i)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") setSelectedOrbit(i);
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <rect
+                        x={x - 10}
+                        y={y}
+                        width="20"
+                        height={h}
+                        fill={fill}
+                        stroke={selected ? "#5b3fbf" : "#0b1c1c"}
+                        strokeWidth={selected ? "3" : "1"}
+                      />
                       <text x={x} y={y - 4} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="7" fontWeight="700" fill="#1d1e33">{val}</text>
                     </g>
                   );
                 })}
                 <text x="450" y="15" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="11" fontWeight="700" fill="#1d1e33">
-                  29 orbits · all ≥ 265 · 28 optimal · cheapest: 265
+                  29 representative orbits · known scores shown · selected: {selectedOrbit + 1}
                 </text>
               </svg>
               <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[11px] text-ink-soft">
@@ -1210,6 +1240,45 @@ export function ExactCoverDemo() {
                 <span><span className="mr-1 inline-block h-2.5 w-2.5 bg-[#e8615d]" />265 (tight)</span>
               </div>
             </div>
+
+            <div className="animate-pop border-4 border-accent bg-[#f1ecff] px-4 py-4 shadow-[5px_5px_0_#5b3fbf]">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="font-mono text-[12px] font-bold uppercase tracking-[0.12em] text-accent">
+                  Solver replay · orbit {selectedOrbit + 1}
+                </div>
+                <div className={`font-mono text-[11px] font-bold uppercase ${solverFinished ? "text-emerald-700" : "text-gold"}`}>
+                  {solverFinished ? "simulation finished" : "simulation running"}
+                </div>
+              </div>
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                <div className="border-2 border-ink bg-[#fffbe9] px-3 py-2">
+                  <div className="font-mono text-[10px] font-bold uppercase tracking-wider text-ink-soft">candidate routes checked</div>
+                  <div className="font-mono text-xl font-bold">{candidateRoutes.toLocaleString()}</div>
+                </div>
+                <div className="border-2 border-ink bg-[#fffbe9] px-3 py-2">
+                  <div className="font-mono text-[10px] font-bold uppercase tracking-wider text-ink-soft">current best</div>
+                  <div className="font-mono text-xl font-bold">{currentBest}</div>
+                </div>
+                <div className="border-2 border-ink bg-[#fffbe9] px-3 py-2">
+                  <div className="font-mono text-[10px] font-bold uppercase tracking-wider text-ink-soft">running lower bound</div>
+                  <div className="font-mono text-xl font-bold">{lowerBound}</div>
+                </div>
+              </div>
+              <div className="mt-3 h-3 border-2 border-ink bg-[#fffbe9]" aria-label={`Simulation progress ${solverTick} of ${solverSteps}`}>
+                <div className="h-full bg-accent transition-[width] duration-100" style={{ width: `${(solverTick / solverSteps) * 100}%` }} />
+              </div>
+              <div className="mt-3 font-mono text-[12px] leading-relaxed text-ink-soft">
+                {solverFinished ? (
+                   <>Simulation target: <strong className="text-ink">{selectedOrbitValue}</strong>.</>
+                ) : (
+                  <>Selected value: <strong className="text-ink">pending</strong> while the replay advances.</>
+                )}
+              </div>
+              <div className="mt-2 text-[13px] leading-relaxed text-ink-soft">
+                Simulation disclaimer: this replays known results and does not prove optimality in-browser.
+              </div>
+            </div>
+
           </div>
         )}
 
@@ -1219,7 +1288,7 @@ export function ExactCoverDemo() {
               {"\\textcolor{#b23a48}{w} \\;=\\; \\underbrace{600}_{\\text{forced laps}} \\;+\\; \\underbrace{265}_{\\text{cheapest clan order}} \\;=\\; 865 \\;>\\; 861"}
             </TeX>
             <div className="mt-1 leading-relaxed">
-              Case A needed 25 or more regions and cost at least 862. Case B allows exactly 24 and
+              Case A needed 25 or more federations and cost at least 862. Case B allows exactly 24 and
               costs at least 865. There is no third option, so every tour costs at least 862 and{" "}
               <strong>s(6) ≥ 868</strong>.
             </div>

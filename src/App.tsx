@@ -54,7 +54,7 @@ export default function App() {
 
         <Wide>
           <DemoErrorBoundary title="Window demo error">
-            <SlidingWindowDemo s={[1, 2, 3, 1, 2, 1, 3, 2, 1]} n={3} label="" />
+            <SlidingWindowDemo s={[1, 2, 3, 1, 2, 1, 3, 2, 1]} n={3} label="" monochrome />
           </DemoErrorBoundary>
         </Wide>
 
@@ -204,6 +204,19 @@ export default function App() {
             <RegionFederationDemo4 />
           </DemoErrorBoundary>
         </Wide>
+
+        <P>
+          If federations are a little confusing, all you really need to understand is that you can
+          move between clans in a federation more cheaply than between clans in different
+          federations. So, if you are trying to visit every house in every clan as quickly as
+          possible, you need to take as much advantage as possible of spending less time at
+          “passport control.”
+        </P>
+
+        <P>
+          We now have all the concepts we need to move to <TeX>n = 6</TeX>, which has 720 houses,
+          120 clans, and 144 federations.
+        </P>
       </Section>
 
       {/* ========================= 4 · RECORDS ========================= */}
@@ -211,19 +224,22 @@ export default function App() {
         id="records"
         num="04"
         kicker="Where we stand"
-        title="The record bounds"
+        title="The greedy bound is not the answer"
         lead={null}
       >
         <P>
-          The classical recursive construction produces lengths{" "}
-          <TeX>1! + 2! + \cdots + n!</TeX>, giving 9, 33 and 153 for <TeX>n = 3, 4, 5</TeX> —
-          each of them optimal. For <TeX>n = 6</TeX> it produces 873, and in 2014 Robin Houston
-          found a string of length <strong>872</strong>.
+          The greedy algorithm gives a concrete way to build a superpermutation. Its recursive
+          construction produces lengths <TeX>1! + 2! + \cdots + n!</TeX>, giving 9, 33 and 153
+          for <TeX>n = 3, 4, 5</TeX> — each of them optimal. But at <TeX>n = 6</TeX>, the same
+          algorithm produces a string of length <strong>873</strong> without proving that 873 is
+          the shortest possible answer.
         </P>
 
         <P>
-          So we know a 872-character string exists, which means <TeX>s(6)</TeX> is at most 872.
-          But what's the largest we can prove it <em>has</em> to be?
+          In 2014, Robin Houston found a valid string of length <strong>872</strong>. That means
+          the greedy algorithm does not find the best string: it only gives an upper bound on the
+          minimum, first showing <TeX>s(6) \le 873</TeX> and then being improved to{" "}
+          <TeX>s(6) \le 872</TeX>. How do we determine the minimum length we actually need?
         </P>
       </Section>
 
@@ -232,9 +248,15 @@ export default function App() {
         id="lower"
         num="05"
         kicker="The classical bound"
-        title="Every valid string needs at least 867 characters"
+        title="Every valid n = 6 string needs at least 867 characters"
         lead={null}
       >
+        <P>
+          We will now build the famous 4chan proof step by step. This section will also review all
+          the concepts you have already seen at <TeX>n = 4</TeX>, but this time at <TeX>n = 6</TeX>,
+          to make sure everything is still intuitive.
+        </P>
+
         <P>
           <strong>Setup.</strong> Take any superpermutation of length <TeX>L</TeX> and list its
           permutations in order of first appearance. Each consecutive pair contributes its cost,
@@ -365,22 +387,22 @@ export default function App() {
           started, having toured <strong>five clans and thirty houses</strong> and closed a
           circuit. He cannot wander forever on cheap moves; the cheap moves themselves fence him
           into a district. That district is what the proofs call a <strong>2-loop</strong>, and we
-          will call it a <strong>region</strong>.
+          will call it a <strong>federation</strong>.
         </P>
 
-        <Callout variant="definition" title="Regions (2-loops)">
-          A <strong>region</strong> is the closed circuit you get by alternating “lap a clan” with
-          “take a kick”: 5 clans, 30 houses. There are <strong>144</strong> regions
-          covering the world. They are not a partition — regions overlap, and in fact every
-          clan belongs to 6 different regions — so a region is best thought of as a natural
+        <Callout variant="definition" title="Federations (2-loops)">
+          A <strong>federation</strong> is the closed circuit you get by alternating “lap a clan” with
+          “take a kick”: 5 clans, 30 houses. There are <strong>144</strong> federations
+          covering the world. They are not a partition — federations overlap, and in fact every
+          clan belongs to 6 different federations — so a federation is best thought of as a natural
           neighbourhood rather than a fixed county boundary.
         </Callout>
 
         <P>
-          Here is the fact that makes regions worth all this setup. Of the 30 houses in a region,
+          Here is the fact that makes federations worth all this setup. Of the 30 houses in a federation,
           only <strong>five</strong> can be used as an entrance from outside; the proofs call them{" "}
           <strong>generators</strong>, and we will call them <strong>gates</strong>. Land anywhere
-          else and you are not in the region's circuit at all. Explore a region below, and switch
+          else and you are not in the federation's circuit at all. Explore a federation below, and switch
           to the overworld view to see where it sits among the other 143.
         </P>
 
@@ -391,21 +413,21 @@ export default function App() {
         </Wide>
 
         <P>
-          The local view shows one region clearly. Before using it in a proof, it helps to zoom
-          out once more: regions overlap with neighbouring regions, and the same rotation clan
-          can sit in several different 2-loop regions.
+          The local view shows one federation clearly. Before using it in a proof, it helps to zoom
+          out once more: federations overlap with neighbouring federations, and the same rotation clan
+          can sit in several different 2-loop federations.
         </P>
 
         <Wide>
-          <DemoErrorBoundary title="Region neighbourhood demo error">
+          <DemoErrorBoundary title="Federation neighbourhood demo error">
             <RegionNeighborhoodDemo />
           </DemoErrorBoundary>
         </Wide>
 
         {/* Lemma 3: Absorption */}
-        <Callout variant="proof" title="Lemma 3 · counting regions">
-          Every 2-loop region has exactly five generator gates, and a jump (any move of price 2 or
-          more) can only enter a region by landing on one of those gates. Each open region can
+        <Callout variant="proof" title="Lemma 3 · counting federations">
+          Every 2-loop federation has exactly five generator gates, and a jump (any move of price 2 or
+          more) can only enter a federation by landing on one of those gates. Each open federation can
           therefore absorb at most five jumps.
           Therefore, a tour with <TeX>R</TeX> arcs (<TeX>R - 1</TeX> jumps) requires:
           <TeX block>{"\\textcolor{#b26a12}{v} \\;\\ge\\; \\left\\lceil \\frac{R-1}{5} \\right\\rceil"}</TeX>
@@ -414,7 +436,7 @@ export default function App() {
         </Callout>
 
         <Wide>
-          <DemoErrorBoundary title="Region coverage demo error">
+          <DemoErrorBoundary title="Federation coverage demo error">
             <RegionCoverageDemo />
           </DemoErrorBoundary>
         </Wide>
@@ -430,7 +452,7 @@ export default function App() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <VarKey n="p" value="720" note="houses that must be visited" />
           <VarKey n="c" value="≥ 119" note="clans lapped in one run" />
-          <VarKey n="v" value="≥ 24" note="2-loop regions entered" />
+          <VarKey n="v" value="≥ 24" note="2-loop federations entered" />
           <VarKey n="w" value="≥ 861" note="characters the tour must pay" />
         </div>
 
@@ -462,39 +484,32 @@ export default function App() {
       >
         <P>
           Suppose a tour of cost <V n="w">w</V> ≤ 861 existed, giving a string of length 867 or
-          less. It must enter some number <V n="v">v</V> of regions. We divide all walks into two cases:
+          less. It must enter some number <V n="v">v</V> of federations. We divide all walks into two cases:
         </P>
 
         <div className="space-y-4">
           <div className="border-4 border-accent bg-[#f1ecff] p-5 shadow-[5px_5px_0_#5b3fbf]">
             <div className="mb-2 font-mono text-[12px] font-bold uppercase tracking-[0.12em] text-accent">
-              Case A · twenty-five or more regions (v ≥ 25)
+              Case A · twenty-five or more federations (v ≥ 25)
             </div>
             <P>
               If <V n="v">v</V> ≥ 25, the HPV inequality alone finishes the job immediately:
               <TeX block>{"\\textcolor{#b23a48}{w} \\;\\ge\\; 720 + 119 + \\textcolor{#b26a12}{v} - 2 \\;=\\; 837 + \\textcolor{#b26a12}{v} \\;\\ge\\; 862"}</TeX>
               which forces length <TeX>6 + 862 = 868</TeX>. So any hypothetical 867-string MUST enter{" "}
-              <em>exactly</em> 24 regions.
+              <em>exactly</em> 24 federations.
             </P>
           </div>
 
           <div className="border-4 border-ember bg-[#ffe6da] p-5 shadow-[5px_5px_0_#b23a48]">
             <div className="mb-2 font-mono text-[12px] font-bold uppercase tracking-[0.12em] text-ember">
-              Case B · exactly twenty-four regions (v = 24)
+              Case B · exactly twenty-four federations (v = 24)
             </div>
             <P>
-              Only one possibility is left: a tour that opens exactly 24 regions. At first this
-              looks like the hard case, because 24 is the smallest number the absorption lemma
-              allows and the HPV inequality gives only <V n="w">w</V> ≥ 861 — one short of what we
-              need. But 24 turns out to be the <em>most</em> constrained number of all, and the
-              reason is a seating problem you can check on your fingers.
-            </P>
-            <P>
-              Each region holds 30 houses. Twenty-four of them hold 24 × 30 = 720 houses — and the
-              world has exactly 720 houses. The traveller must visit every one of them, and he can
-              only stand inside a region he has opened. So his 24 regions have to accommodate all
-              720 houses using exactly 720 places: a perfect fit, with no room for two regions to
-              claim the same house.
+              Each federation holds 5 clans of 6 houses = 30 houses per federation. Twenty-four of
+              them hold 24 × 30 = 720 houses — and the world has exactly 720 houses. The traveller
+              must visit every one of them, and he can only stand inside a federation he has opened.
+              So his 24 federations have to accommodate all 720 houses using exactly 720 places: a
+              perfect fit, with no room for two federations to claim the same house.
             </P>
             <P>
               That single observation removes almost all of the freedom in the problem, and turns
@@ -510,23 +525,29 @@ export default function App() {
           </DemoErrorBoundary>
         </Wide>
 
-        <Callout variant="proof" title="Case B, written out">
-          <P>
-            Suppose <V n="v">v</V> = 24. Since the 24 regions must contain all 720 houses and have
-            exactly 720 places between them, they are pairwise disjoint: an{" "}
-            <strong>exact cover</strong>. Every clan then lies in exactly one region and so has
-            exactly one gate. A gate is the only entrance, and a clan cannot be re-entered
-            through a gate that does not exist, so the traveller laps each clan once and in
-            full — that is <TeX>R = 120</TeX> arcs of five cheap steps, costing 600 characters.
-          </P>
-          <P>
-            What remains is only the order in which the 120 clans are visited, plus the price of
-            each hop between consecutive clans. Enumerating every exact cover gives 10,068 of them,
-            falling into 29 classes once you allow the six symbols to be relabelled; solving each
-            class exactly gives a cheapest clan-order cost of 265. Hence
-          </P>
-          <TeX block>{"\\textcolor{#b23a48}{w} \\;=\\; 600 + 265 \\;=\\; 865 \\;>\\; 861 ."}</TeX>
-        </Callout>
+        <details className="border-4 border-emerald-700 bg-[#e3f2d6] shadow-[5px_5px_0_#1f7a5c]">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 font-mono text-[12px] font-bold uppercase tracking-[0.12em] text-emerald-800">
+            <span>Case B, written out</span>
+            <span className="text-[11px]">expand proof</span>
+          </summary>
+          <div className="border-t-2 border-emerald-700/30 px-5 py-5">
+            <P>
+              Suppose <V n="v">v</V> = 24. Since the 24 federations must contain all 720 houses and have
+              exactly 720 places between them, they are pairwise disjoint: an{" "}
+              <strong>exact cover</strong>. Every clan then lies in exactly one federation and so has
+              exactly one gate. A gate is the only entrance, and a clan cannot be re-entered
+              through a gate that does not exist, so the traveller laps each clan once and in
+              full — that is <TeX>R = 120</TeX> arcs of five cheap steps, costing 600 characters.
+            </P>
+            <P>
+              What remains is only the order in which the 120 clans are visited, plus the price of
+              each hop between consecutive clans. Enumerating every exact cover gives 10,068 of them,
+              falling into 29 classes once you allow the six symbols to be relabelled; solving each
+              class exactly gives a cheapest clan-order cost of 265. Hence
+            </P>
+            <TeX block>{"\\textcolor{#b23a48}{w} \\;=\\; 600 + 265 \\;=\\; 865 \\;>\\; 861 ."}</TeX>
+          </div>
+        </details>
 
         <P>
           Both branches give <V n="w">w</V> ≥ 862, therefore{" "}
@@ -542,7 +563,7 @@ export default function App() {
             AI-powered Lean monster and equal to <strong>872</strong>.
           </P>
           <P>
-            Here is the honest state of the field, because it moved very fast in mid-2026.
+              Here is the state of the field, because it moved very fast in mid-2026.
           </P>
         </Callout>
 
@@ -592,7 +613,7 @@ export default function App() {
             <ul className="ml-5 list-disc space-y-2">
               <li>
                 <strong>2011 / 2018 — 867.</strong> The anonymous 4chan bound, later formalised
-                by Houston, Pantone and Vatter. It stood untouched for roughly fifteen years.
+                by Houston, Pantone and Vatter.
               </li>
               <li>
                 <strong>Raudvere — a second 868 route.</strong>{" "}

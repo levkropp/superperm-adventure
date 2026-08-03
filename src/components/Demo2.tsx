@@ -2,10 +2,8 @@ import { useMemo, useState } from "react";
 import {
   HOUSTON_872,
   allPerms,
-  buildLoopStructure,
   factorial,
   key,
-  loopWheelSets,
   pathToString,
   randomTour,
   rot,
@@ -14,9 +12,10 @@ import {
   weight,
 } from "../lib/perms";
 import { useStepper } from "../lib/anim";
-import { OverlapRoadMap, PermWorldMap, RegionStackMap, TopDownTspMap } from "./PixelMaps";
+import { OverlapRoadMap, PermWorldMap, TopDownTspMap } from "./PixelMaps";
 import { Btn, Note, Panel, PermChip, PermText, PlayBar, Str, Wide } from "./ui";
 import { CostLensLegend } from "./CostLens";
+import { FederationMainDemo4 } from "./RegionLab";
 
 /* ------------------------------------------------------------------ */
 /*  Demo 4 · the sliding overlap: where does "cost" come from?         */
@@ -287,15 +286,13 @@ export function TourBuilder3() {
       <Note>
         Any ordering of the six permutations, chained with maximum overlap, is a valid
         superpermutation. So the only question left is <em>which ordering is cheapest</em>.
-        The permutations can be arranged into two clans of three: the <strong>123 clan</strong>
+        The permutations can be arranged into two clans of three: the <strong>123 clan</strong>{" "}
         and the <strong>213 clan</strong>. Each clan shares a{" "}
-        <strong>rotation chain</strong> (which we will refer to as an <strong>arc</strong> later)
-        of cheap 1-cost moves. At the end of a rotation chain, only one of the three options in
-        the other clan has a cost of 2; the rest have a cost of 3.
+            <strong>rotation chain</strong> (which we will refer to as an <strong>arc</strong> later)
+            of cheap 1-cost moves. At the end of a rotation chain, only one of the three options in
+            the other clan has a cost of 2; the rest have a cost of 3.
         Press “watch the optimal tour” to see the traveller walk it, or click towns on the
-        map to build your own. Once a town is selected, the faint spokes are a <strong>cost
-        lens</strong>: each spoke goes to one possible next town and carries the exact number of
-        characters that move would append.
+        map to build your own.
       </Note>
 
       <div className="flex flex-wrap gap-2">
@@ -385,8 +382,6 @@ export function TourBuilder3() {
 /* ------------------------------------------------------------------ */
 
 const OPT4 = stringToPath(standardSuperperm(4), 4);
-const STRUCT4 = buildLoopStructure(4);
-const REGIONS4 = loopWheelSets(STRUCT4);
 
 export function TourViewer4() {
   const [order, setOrder] = useState<number[][]>(OPT4);
@@ -464,16 +459,16 @@ export function TourViewer4() {
 
 export function RegionFederationDemo4() {
   return (
-    <Panel label="Demo 8 · overlapping 2-loop federations" className="space-y-4">
+    <Panel label="Demo 8 · federation membership and archipelago" className="space-y-4">
       <Note>
-        Notice the first 3-cost jump: after the <strong>3124</strong> clan, both possible cost-2
-        destinations, <strong>1234</strong> and <strong>1243</strong>, have already been visited, so
-        the next unvisited clan begins with only a one-symbol overlap.
+        Notice the first 3-cost jump in the optimal route: it leaves <strong>4312</strong> in the
+        <strong>3124</strong> clan and lands on <strong>2134</strong> in the <strong>2134</strong> clan.
+        The jump shares only the final <strong>2</strong> with the next permutation, so it costs 3.
         A useful analogy for a 2-loop region is a <strong>federation</strong>: it gathers{" "}
-        {REGIONS4[0]?.length ?? 0} clans linked by kick jumps, but it is not itself a clan. A clan
+        three clans linked by 2-cost jumps, but it is not itself a clan. A clan
         can belong to several federations, which is why their boundaries overlap.
       </Note>
-      <RegionStackMap clans={STRUCT4.wheels} regions={REGIONS4} />
+      <FederationMainDemo4 />
     </Panel>
   );
 }

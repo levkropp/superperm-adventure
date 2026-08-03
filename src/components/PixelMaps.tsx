@@ -293,9 +293,9 @@ const N3_VILLAGE_POINTS: Point[] = [
   { x: 70, y: 195 },
   { x: 130, y: 155 },
   { x: 190, y: 195 },
-  { x: 450, y: 195 },
-  { x: 510, y: 155 },
-  { x: 570, y: 195 },
+  { x: 450, y: 265 },
+  { x: 510, y: 225 },
+  { x: 570, y: 265 },
 ];
 
 const N4_VILLAGE_POINTS: Point[] = [
@@ -371,7 +371,7 @@ function VillageFields({ n, villageLayout }: { n: 2 | 3 | 4; villageLayout: bool
     n === 3
       ? [
           { x: 35, y: 115, w: 190, h: 125 },
-          { x: 415, y: 115, w: 190, h: 125 },
+          { x: 415, y: 185, w: 190, h: 125 },
         ]
       : [
           ...[105, 320, 535].map((x) => ({ x: x - 100, y: 55, w: 200, h: 100 })),
@@ -482,7 +482,7 @@ function ClanCoats({ n, villageLayout }: { n: 2 | 3 | 4; villageLayout: boolean 
     n === 3
       ? [
           { x: 130, y: 62 },
-          { x: 510, y: 62 },
+          { x: 510, y: 152 },
         ]
       : [
           ...[105, 320, 535].map((x) => ({ x, y: 45 })),
@@ -881,6 +881,155 @@ function projectWorld(point: WorldPoint, camera: Camera3d, width: number, height
   };
 }
 
+const FEDERATION_OVERWORLD_W = 1200;
+const FEDERATION_OVERWORLD_H = 780;
+
+function federationOverworldPoint(index: number, cols: number, top: number, stepX: number, stepY: number): Point {
+  const col = index % cols;
+  const row = Math.floor(index / cols);
+  return { x: 78 + col * stepX, y: top + row * stepY };
+}
+
+export function FederationOverworldMap({
+  clans,
+  regions,
+  selectedClanKey,
+}: {
+  clans: Perm[][];
+  regions: number[][];
+  selectedClanKey?: string;
+}) {
+  const clanPoints = useMemo(
+    () => clans.map((_, index) => federationOverworldPoint(index, 12, 505, 95, 24)),
+    [clans],
+  );
+  const satellitePoints = useMemo(
+    () => regions.map((_, index) => federationOverworldPoint(index, 12, 74, 95, 31)),
+    [regions],
+  );
+  const memberships = useMemo(() => {
+    const result = Array.from({ length: clans.length }, () => [] as number[]);
+    regions.forEach((memberIds, regionId) => memberIds.forEach((clanId) => result[clanId]?.push(regionId)));
+    return result;
+  }, [clans.length, regions]);
+  const selectedFromKey = useMemo(
+    () => Math.max(0, clans.findIndex((clan) => clan.some((permutation) => key(permutation) === selectedClanKey))),
+    [clans, selectedClanKey],
+  );
+  const [selectedClan, setSelectedClan] = useState(selectedFromKey);
+  const [selectedFederation, setSelectedFederation] = useState<number | null>(null);
+  const [view, setView] = useState({ x: 0, y: 0, w: FEDERATION_OVERWORLD_W, h: FEDERATION_OVERWORLD_H });
+
+  useEffect(() => {
+    setSelectedClan(selectedFromKey);
+    setSelectedFederation(null);
+  }, [selectedFromKey]);
+
+  const activeFederations = selectedFederation === null ? memberships[selectedClan] ?? [] : [selectedFederation];
+  const activeFederationSet = new Set(activeFederations);
+  const activeClans = new Set(selectedFederation === null ? [selectedClan] : regions[selectedFederation] ?? []);
+  const selectedLabel = key(clans[selectedClan]?.[0] ?? []);
+  const selectedFederationLabel = selectedFederation === null ? null : `F${selectedFederation + 1}`;
+  const clampView = (next: { x: number; y: number; w: number; h: number }) => ({
+    ...next,
+    x: Math.max(0, Math.min(FEDERATION_OVERWORLD_W - next.w, next.x)),
+    y: Math.max(0, Math.min(FEDERATION_OVERWORLD_H - next.h, next.y)),
+  });
+  const zoom = (factor: number) => {
+    setView((previous) => {
+      const w = Math.max(420, Math.min(FEDERATION_OVERWORLD_W, previous.w * factor));
+      const h = Math.max(273, Math.min(FEDERATION_OVERWORLD_H, previous.h * factor));
+      return clampView({ x: previous.x + (previous.w - w) / 2, y: previous.y + (previous.h - h) / 2, w, h });
+    });
+  };
+  const pan = (dx: number, dy: number) => {
+    setView((previous) => clampView({ ...previous, x: previous.x + dx * previous.w * 0.16, y: previous.y + dy * previous.h * 0.16 }));
+  };
+
+  return (
+    <MapFrame
+      title="Federation archipelago overworld"
+      w={FEDERATION_OVERWORLD_W}
+      h={FEDERATION_OVERWORLD_H}
+      subtitle={selectedFederationLabel ? `${selectedFederationLabel} selected · 5 clan islands` : `${selectedLabel} clan · ${activeFederations.length} federations`}
+      footer={
+        <div className="flex flex-wrap justify-between gap-2">
+          <span>120 clan islands · 144 federation satellites</span>
+          <span>click a node to inspect its memberships</span>
+          <span>use the controls to zoom and pan</span>
+        </div>
+      }
+    >
+      <div className="relative h-full">
+        <svg viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`} role="img" aria-label="zoomable federation archipelago with 120 clan islands and 144 federation satellites">
+          <rect width={FEDERATION_OVERWORLD_W} height={FEDERATION_OVERWORLD_H} fill="#10231f" />
+          <path d="M0 455 C180 405 360 470 540 430 S900 410 1200 465 L1200 780 L0 780 Z" fill="#163d2f" />
+          <text x="34" y="38" fontFamily="IBM Plex Mono, monospace" fontSize="15" fontWeight="700" fill="#fff4cb">n = 6 · federation archipelago</text>
+          <text x="34" y="60" fontFamily="IBM Plex Mono, monospace" fontSize="11" fill="#a3d9b1">satellites above · clans below · bright beams show the selected relationship</text>
+          <text x="34" y="470" fontFamily="IBM Plex Mono, monospace" fontSize="11" fontWeight="700" fill="#a3d9b1">144 federation satellites</text>
+          <text x="34" y="752" fontFamily="IBM Plex Mono, monospace" fontSize="11" fontWeight="700" fill="#a3d9b1">120 clan islands</text>
+
+          {regions.map((memberIds, regionId) => {
+            const active = activeFederationSet.has(regionId);
+            const color = REGION_COLORS[regionId % REGION_COLORS.length];
+            return memberIds.map((clanId) => (
+              <line
+                key={`${regionId}-${clanId}`}
+                x1={satellitePoints[regionId].x}
+                y1={satellitePoints[regionId].y + 7}
+                x2={clanPoints[clanId].x}
+                y2={clanPoints[clanId].y - 7}
+                stroke={color}
+                strokeWidth={active ? 2.5 : 0.7}
+                strokeDasharray={active ? undefined : "4 6"}
+                opacity={active ? 0.78 : 0.025}
+              />
+            ));
+          })}
+
+          {regions.map((_, regionId) => {
+            const point = satellitePoints[regionId];
+            const active = activeFederationSet.has(regionId);
+            const selected = selectedFederation === regionId;
+            const color = REGION_COLORS[regionId % REGION_COLORS.length];
+            return (
+              <g key={regionId} onClick={() => setSelectedFederation(regionId)} className="cursor-pointer" opacity={active ? 1 : 0.32}>
+                <circle cx={point.x} cy={point.y} r={selected ? 8 : active ? 6 : 3.5} fill={selected ? "#fff176" : color} stroke={selected ? "#fff176" : "#081b18"} strokeWidth={selected ? 3 : 1.5} />
+                <circle cx={point.x} cy={point.y} r="12" fill="transparent" stroke="transparent" />
+                {(active || view.w < 720) && <text x={point.x} y={point.y - 11} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize={view.w < 720 ? 9 : 8} fontWeight="700" fill={selected ? "#fff176" : color}>F{regionId + 1}</text>}
+              </g>
+            );
+          })}
+
+          {clanPoints.map((point, clanId) => {
+            const active = activeClans.has(clanId);
+            const selected = selectedFederation === null && clanId === selectedClan;
+            const color = selectedFederation === null ? "#65c5a2" : REGION_COLORS[selectedFederation % REGION_COLORS.length];
+            return (
+              <g key={clanId} onClick={() => { setSelectedClan(clanId); setSelectedFederation(null); }} className="cursor-pointer" opacity={active ? 1 : 0.5}>
+                <path d={`M ${point.x - 13} ${point.y + 5} L ${point.x - 9} ${point.y - 7} L ${point.x + 8} ${point.y - 9} L ${point.x + 14} ${point.y + 4} L ${point.x + 6} ${point.y + 9} L ${point.x - 8} ${point.y + 9} Z`} fill={selected ? "#fff176" : active ? color : "#2b634c"} stroke={selected ? "#fff176" : active ? color : "#0b1c1c"} strokeWidth={selected ? 3 : 1.5} />
+                <circle cx={point.x} cy={point.y} r="14" fill="transparent" stroke="transparent" />
+                {(selected || (active && view.w < 720)) && <text x={point.x} y={point.y - 14} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize={view.w < 720 ? 9 : 8} fontWeight="700" fill={selected ? "#fff176" : color}>{key(clans[clanId]?.[0] ?? [])}</text>}
+              </g>
+            );
+          })}
+        </svg>
+        <div className="absolute right-2 top-2 grid grid-cols-3 gap-1 border-2 border-[#69a24a] bg-[#10231f]/90 p-1 font-mono text-[9px] font-bold text-[#fff4cb]">
+          <span />
+          <button type="button" onClick={() => pan(0, -1)} className="border border-[#69a24a] px-1.5 py-1 hover:bg-[#244f35]" aria-label="pan up">up</button>
+          <span />
+          <button type="button" onClick={() => pan(-1, 0)} className="border border-[#69a24a] px-1.5 py-1 hover:bg-[#244f35]" aria-label="pan left">left</button>
+          <button type="button" onClick={() => setView({ x: 0, y: 0, w: FEDERATION_OVERWORLD_W, h: FEDERATION_OVERWORLD_H })} className="border border-[#69a24a] px-1.5 py-1 hover:bg-[#244f35]" aria-label="reset view">reset</button>
+          <button type="button" onClick={() => pan(1, 0)} className="border border-[#69a24a] px-1.5 py-1 hover:bg-[#244f35]" aria-label="pan right">right</button>
+          <button type="button" onClick={() => zoom(1.2)} className="border border-[#69a24a] px-1.5 py-1 hover:bg-[#244f35]" aria-label="zoom out">-</button>
+          <button type="button" onClick={() => pan(0, 1)} className="border border-[#69a24a] px-1.5 py-1 hover:bg-[#244f35]" aria-label="pan down">down</button>
+          <button type="button" onClick={() => zoom(0.8)} className="border border-[#69a24a] px-1.5 py-1 hover:bg-[#244f35]" aria-label="zoom in">+</button>
+        </div>
+      </div>
+    </MapFrame>
+  );
+}
+
 export function RegionStackMap({
   clans,
   regions,
@@ -1041,7 +1190,7 @@ export function RegionStackMap({
     ctx.save();
     ctx.fillStyle = "#fff4cb";
     ctx.font = "700 13px 'IBM Plex Mono', monospace";
-    ctx.fillText(`${selectedRegionIds.length} overlapping region boundaries for ${selectedLabel}`, 24, 28);
+     ctx.fillText(`${selectedRegionIds.length} overlapping federation boundaries for ${selectedLabel}`, 24, 28);
     ctx.font = "500 11px 'IBM Plex Mono', monospace";
     ctx.fillStyle = "#a3d9b1";
     ctx.fillText("drag to orbit · wheel to zoom · click a clan to inspect it", 24, 46);
@@ -1097,14 +1246,14 @@ export function RegionStackMap({
 
   return (
     <MapFrame
-      title={`Overworld · ${selectedRegionIds.length}-region stack`}
+       title={`Overworld · ${selectedRegionIds.length}-federation stack`}
       w={900}
       h={540}
-      subtitle={`${selectedLabel} clan · member of ${selectedRegionIds.length} regions`}
+       subtitle={`${selectedLabel} clan · member of ${selectedRegionIds.length} federations`}
       footer={
         <div className="flex flex-wrap justify-between gap-2">
           <span>base plane = {clans.length} clans</span>
-          <span>raised planes = the selected clan's regions</span>
+           <span>raised planes = the selected clan's federations</span>
           <span>click any clan to inspect its memberships</span>
         </div>
       }
@@ -1113,7 +1262,7 @@ export function RegionStackMap({
         ref={canvasRef}
         className="block h-full w-full touch-none cursor-grab active:cursor-grabbing"
         role="img"
-        aria-label={`three-dimensional view of ${selectedRegionIds.length} regions containing clan ${selectedLabel}`}
+         aria-label={`three-dimensional view of ${selectedRegionIds.length} federations containing clan ${selectedLabel}`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -1372,19 +1521,19 @@ export function LoopRegionMap({
 
   if (zoom === "world") {
     return (
-      <RegionStackMap clans={clans} regions={regions} selectedClanKey={key(walk[0])} />
+      <FederationOverworldMap clans={clans} regions={regions} selectedClanKey={key(walk[0])} />
     );
   }
 
   return (
     <MapFrame
-      title="2-Loop Region (30 Permutations)"
+       title="2-Loop Federation (30 Permutations)"
       w={MAP_W}
       h={MAP_H}
       subtitle={`${visible}/${walk.length} houses revealed`}
       footer={
         <div className="flex flex-wrap justify-between gap-2">
-          <span>5 clans x 6 houses = 30 permutations</span>
+           <span>1 federation = 5 clans x 6 houses = 30 permutations</span>
           <span>Orange roofs = the 5 entrance gates</span>
           <span>Red bridges = kicks (cost 2)</span>
         </div>
@@ -1469,7 +1618,7 @@ export function AbsorptionMap({
       subtitle={`${Math.min(placed, capacity)}/${capacity} gates filled (${placed} jumps)`}
       footer={
         <div className="flex flex-wrap justify-between gap-2">
-          <span>Each region has 5 gates</span>
+          <span>Each federation has 5 gates</span>
           {stranded > 0 ? (
             <span className="font-bold text-[#ff7272]">{stranded} JUMPS ARE STRANDED WITH NO LANDING PAD!</span>
           ) : (
@@ -1547,7 +1696,7 @@ export function ExactCoverTilingMap({
   revealedRegions,
   highlightRegion = null,
   collision = null,
-  title = "The tiling board · 120 clans",
+       title = "The federation tiling board · 120 clans",
   subtitle,
 }: {
   cells: TilingCell[];
@@ -1575,12 +1724,12 @@ export function ExactCoverTilingMap({
       footer={
         <div className="flex flex-wrap justify-between gap-2">
           <span>1 square = 1 clan (6 houses)</span>
-          <span>1 colour = 1 two-loop region (5 clans)</span>
-          <span>{collision ? "illegal: overlap detected" : `${Math.min(revealedRegions, 24)}/24 regions placed`}</span>
+           <span>1 colour = 1 two-loop federation (5 clans)</span>
+           <span>{collision ? "illegal: overlap detected" : `${Math.min(revealedRegions, 24)}/24 federations placed`}</span>
         </div>
       }
     >
-      <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label="board of 120 clans coloured by region">
+       <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label="board of 120 clans coloured by federation">
         <rect width={w} height={h} fill="#10231f" />
         <rect x="4" y="4" width={w - 8} height={h - 8} fill="none" stroke="#081b18" strokeWidth="8" />
 

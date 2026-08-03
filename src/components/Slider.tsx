@@ -9,10 +9,12 @@ export function SlidingWindowDemo({
   s,
   n,
   label = "",
+  monochrome = false,
 }: {
   s: (number | string)[];
   n: number;
   label?: string;
+  monochrome?: boolean;
 }) {
   const player = useStepper(s.length - n + 1, { speed: 380 });
 
@@ -52,7 +54,7 @@ export function SlidingWindowDemo({
                 key={i}
                 className={`px-0.5 ${inWindow ? "bg-[#f4d35e] shadow-[0_0_0_3px_#f4d35e]" : ""}`}
               >
-                <span className={dClass(Number(c))}>{c}</span>
+                <span className={monochrome ? "text-ink" : dClass(Number(c))}>{c}</span>
               </span>
             );
           })}

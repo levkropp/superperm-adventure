@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useRef } from "react";
 
 /* ------------------------------------------------------------------ */
 /*  Shared UI primitives                                               */
@@ -266,9 +266,17 @@ export function PlayBar({
   label?: ReactNode;
   playLabel?: string;
 }) {
+  const playBarRef = useRef<HTMLDivElement>(null);
+  const handleToggle = () => {
+    if (!playing && typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) {
+      playBarRef.current?.closest<HTMLElement>(".pixel-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    onToggle();
+  };
+
   return (
-    <div className="flex flex-wrap items-center gap-2 border-3 border-ink bg-[#f3ead0] px-3 py-2 shadow-[3px_3px_0_#1d1e33]">
-      <Btn onClick={onToggle}>{playing ? "pause" : playLabel}</Btn>
+    <div ref={playBarRef} className="flex flex-wrap items-center gap-2 border-3 border-ink bg-[#f3ead0] px-3 py-2 shadow-[3px_3px_0_#1d1e33]">
+      <Btn onClick={handleToggle}>{playing ? "pause" : playLabel}</Btn>
       <Btn variant="soft" onClick={onReset}>
         reset
       </Btn>
