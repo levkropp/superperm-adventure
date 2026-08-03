@@ -35,11 +35,11 @@ export default function App() {
         lead={null}
       >
         <P>
-          Take the symbols <TeX>1, 2, …, n</TeX>. An ordering of all of them — say{" "}
-          <TeX>312</TeX> when <TeX>n = 3</TeX> — is a <em>permutation</em>. There are{" "}
-          <TeX>720</TeX> of them for <TeX>n = 6</TeX>. Now write down one long string that
-          contains <em>every</em> permutation as a contiguous block — a substring, like
-          "312" sitting inside "…43121…".
+          How many ways can you arrange <TeX>123</TeX>? There are six: <TeX>123</TeX>,{" "}
+          <TeX>132</TeX>, <TeX>213</TeX>, <TeX>231</TeX>, <TeX>312</TeX>, and <TeX>321</TeX>. Each
+          one is a <em>permutation</em>. Now imagine putting all six inside one long string, with
+          each one appearing as a consecutive block — like <TeX>312</TeX> sitting inside{" "}
+          <TeX>43121</TeX>.
         </P>
 
         <P>
@@ -60,10 +60,10 @@ export default function App() {
         </Callout>
 
         <P>
-          Known exactly: <TeX>s(1)=1</TeX>, <TeX>s(2)=3</TeX>, <TeX>s(3)=9</TeX>,{" "}
-          <TeX>s(4)=33</TeX>, <TeX>s(5)=153</TeX>. For <TeX>n = 6</TeX> the answer is still
-          unknown — trapped between a lower bound of 867 and an upper bound of 872. This paper
-          proves the lower bound, then improves it to 868.
+          We know the shortest answers for one through five symbols: <TeX>s(1)=1</TeX>,{" "}
+          <TeX>s(2)=3</TeX>, <TeX>s(3)=9</TeX>, <TeX>s(4)=33</TeX>, and <TeX>s(5)=153</TeX>. For{" "}
+          <TeX>n = 6</TeX>, the answer was very hard to find. We knew it had to be between 867
+          and 872; this adventure follows a proof that pushes the lower bound to 868.
         </P>
 
         <Callout variant="story" title="Origin">
@@ -82,12 +82,7 @@ export default function App() {
         num="02"
         kicker="Getting a feel"
         title="Six permutations, nine characters"
-        lead={
-          <>
-            Before any proof, look at the smallest interesting case. Six permutations is few
-            enough to hold in your head and rich enough to hide the real puzzle.
-          </>
-        }
+        lead={null}
       >
         <P>
           The record <TeX>123121321</TeX> has length <TeX>9 = 3! + 2! + 1!</TeX>. It is clearly

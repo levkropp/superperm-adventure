@@ -72,7 +72,14 @@ export function OverlapSlider() {
 
       <div className="flex flex-wrap gap-2">
         {SLIDE_PAIRS.map(([x, y], i) => (
-          <Btn key={i} variant={i === pair ? "primary" : "soft"} onClick={() => setPair(i)}>
+          <Btn
+            key={i}
+            variant={i === pair ? "primary" : "soft"}
+            onClick={() => {
+              setPair(i);
+              player.reset();
+            }}
+          >
             {key(x)} then {key(y)}
           </Btn>
         ))}
