@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { coverage, key, standardSuperperm, stringToPath, weight } from "../lib/perms";
+import { coverage, key, pathToString, standardSuperperm, stringToPath } from "../lib/perms";
 import { useStepper } from "../lib/anim";
 import { TopDownTspMap } from "./PixelMaps";
 import { Btn, Note, Panel, PermChip, PlayBar, Str, Wide } from "./ui";
@@ -40,7 +40,8 @@ export function CoverageGrid({ s, n }: { s: (number | string)[]; n: number }) {
 const S3 = standardSuperperm(3);
 
 export function N3Explorer() {
-  const [s, setS] = useState<(number | string)[]>([]);
+  const [route, setRoute] = useState<number[][]>([]);
+  const s = useMemo(() => pathToString(route), [route]);
   const [best, setBest] = useState<number | null>(null);
   const cov = useMemo(() => coverage(s, 3), [s]);
   const complete = cov.found === 6;
@@ -70,10 +71,10 @@ export function N3Explorer() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Btn variant="soft" onClick={() => setS((o) => o.slice(0, -1))} disabled={!s.length}>
+          <Btn variant="soft" onClick={() => setRoute((old) => old.slice(0, -1))} disabled={!route.length}>
             undo
           </Btn>
-          <Btn variant="soft" onClick={() => setS([])} disabled={!s.length}>
+          <Btn variant="soft" onClick={() => setRoute([])} disabled={!route.length}>
             clear
           </Btn>
           <div className="ml-auto flex items-center gap-4 font-mono text-[15px]">
@@ -93,18 +94,11 @@ export function N3Explorer() {
         <Wide>
           <TopDownTspMap
             n={3}
-            path={stringToPath(s, 3)}
+            path={route}
             title="n = 3 map"
-            subtitle={`${cov.found}/6 towns`}
+            subtitle={`${route.length}/6 visited · ${cov.found}/6 covered`}
             onTownClick={(p) =>
-              setS((old) => {
-                const path = stringToPath(old, 3);
-                const current = path[path.length - 1];
-                if (!current) return [...p];
-                if (path.some((town) => key(town) === key(p))) return old;
-                const cost = weight(current, p);
-                return [...old, ...p.slice(p.length - cost)];
-              })
+              setRoute((old) => (old.some((town) => key(town) === key(p)) ? old : [...old, p]))
             }
           />
         </Wide>
