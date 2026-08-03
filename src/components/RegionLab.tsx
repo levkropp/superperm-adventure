@@ -98,6 +98,13 @@ const N4_BASE: Lab3DPoint[] = [
   { x: 3.4, y: 1.8, z: 0 },
 ];
 
+const N4_TOWN_OFFSETS: Lab3DPoint[] = [
+  { x: -0.45, y: -0.3, z: 0.05 },
+  { x: 0.45, y: -0.3, z: 0.1 },
+  { x: -0.45, y: 0.3, z: 0 },
+  { x: 0.45, y: 0.3, z: 0.08 },
+];
+
 function projectLabPoint(point: Lab3DPoint, yaw: number, pitch: number, scale = 54) {
   const cosYaw = Math.cos(yaw);
   const sinYaw = Math.sin(yaw);
@@ -143,10 +150,6 @@ function N4FederationView({ model, selected, onSelect }: { model: RegionModel; s
   };
 
   const projectedBase = N4_BASE.map((point) => projectLabPoint(point, camera.yaw, camera.pitch));
-  const regionNodes = regionIds.map((_, i) => {
-    const angle = -Math.PI / 2 + (i * Math.PI * 2) / regionIds.length;
-    return projectLabPoint({ x: Math.cos(angle) * 5, y: Math.sin(angle) * 2.5, z: 2.4 }, camera.yaw, camera.pitch);
-  });
 
   return (
     <div>
@@ -164,16 +167,32 @@ function N4FederationView({ model, selected, onSelect }: { model: RegionModel; s
         <rect width="900" height="520" fill="#10231f" />
         {regionIds.map((regionId, i) => {
           const memberIds = model.regions[regionId];
-          const regionPoint = regionNodes[i];
+          const centers = memberIds.map((clanId) => N4_BASE[clanId]);
+          const center = centers.reduce((sum, point) => ({ x: sum.x + point.x / centers.length, y: sum.y + point.y / centers.length, z: 1.35 }), { x: 0, y: 0, z: 1.35 });
+          const radiusX = Math.max(...centers.map((point) => Math.abs(point.x - center.x))) + 1.3;
+          const radiusY = Math.max(...centers.map((point) => Math.abs(point.y - center.y))) + 1.1;
           const color = i === 0 ? "#65c5a2" : "#f0aa4f";
           return (
             <g key={regionId}>
-              {memberIds.map((clanId) => (
-                <line key={clanId} x1={projectedBase[clanId].x} y1={projectedBase[clanId].y} x2={regionPoint.x} y2={regionPoint.y} stroke={clanId === selected ? "#fff176" : color} strokeWidth={clanId === selected ? 4 : 2} opacity="0.78" />
-              ))}
-              <circle cx={regionPoint.x} cy={regionPoint.y} r="25" fill={color} stroke="#081b18" strokeWidth="4" />
-              <text x={regionPoint.x} y={regionPoint.y + 4} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="13" fontWeight="700" fill="#081b18">R{regionId + 1}</text>
-              <text x={regionPoint.x} y={regionPoint.y + 40} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="10" fontWeight="700" fill={color}>federation</text>
+              {Array.from({ length: 7 }, (_, slice) => {
+                const t = slice / 6;
+                const z = t * 2.7;
+                const width = radiusX * (0.25 + Math.sin(Math.PI * t) * 0.9);
+                const height = radiusY * (0.25 + Math.sin(Math.PI * t) * 0.9);
+                const cloud = Array.from({ length: 12 }, (_, point) => {
+                  const angle = (point * Math.PI * 2) / 12;
+                  return projectLabPoint({ x: center.x + Math.cos(angle) * width, y: center.y + Math.sin(angle) * height, z }, camera.yaw, camera.pitch);
+                });
+                return <polygon key={slice} points={cloud.map((point) => `${point.x},${point.y}`).join(" ")} fill={color} fillOpacity={0.04} stroke={color} strokeWidth="1.5" strokeDasharray="5 5" />;
+              })}
+              {memberIds.map((clanId) => {
+                const regionCenter = projectLabPoint({ ...center, z: 1.35 }, camera.yaw, camera.pitch);
+                return <line key={clanId} x1={projectedBase[clanId].x} y1={projectedBase[clanId].y} x2={regionCenter.x} y2={regionCenter.y} stroke={clanId === selected ? "#fff176" : color} strokeWidth={clanId === selected ? 4 : 2} opacity="0.78" />;
+              })}
+              {(() => {
+                const labelPoint = projectLabPoint({ ...center, z: 2.7 }, camera.yaw, camera.pitch);
+                return <text x={labelPoint.x} y={labelPoint.y - 8} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="13" fontWeight="700" fill={color}>R{regionId + 1} federation</text>;
+              })()}
             </g>
           );
         })}
@@ -181,13 +200,17 @@ function N4FederationView({ model, selected, onSelect }: { model: RegionModel; s
           const point = projectedBase[clanId];
           return (
             <g key={clanId} transform={`translate(${point.x} ${point.y})`} onClick={() => !suppressClick.current && onSelect(clanId)} className="cursor-pointer">
-              {clan.map((permutation, i) => <House key={key(permutation)} p={permutation} at={offsets[i]} size="sm" state={clanId === selected ? "current" : "unvisited"} />)}
+              {clan.map((permutation, i) => {
+                const town = N4_TOWN_OFFSETS[i];
+                const townPoint = projectLabPoint({ x: N4_BASE[clanId].x + town.x, y: N4_BASE[clanId].y + town.y, z: town.z }, camera.yaw, camera.pitch);
+                return <House key={key(permutation)} p={permutation} at={{ x: townPoint.x - point.x + offsets[i].x, y: townPoint.y - point.y + offsets[i].y }} size="sm" state={clanId === selected ? "current" : "unvisited"} />;
+              })}
               <ClanCoat clan={clan[0]} at={{ x: 0, y: -32 }} scale={0.55} />
             </g>
           );
         })}
         <text x="24" y="30" fontFamily="IBM Plex Mono, monospace" fontSize="13" fontWeight="700" fill="#fff4cb">drag to orbit · click a labeled clan</text>
-        <text x="24" y="50" fontFamily="IBM Plex Mono, monospace" fontSize="11" fill="#a3d9b1">gold lines = the selected clan's incidence edges</text>
+        <text x="24" y="50" fontFamily="IBM Plex Mono, monospace" fontSize="11" fill="#a3d9b1">town points cluster inside clans · translucent clouds are federations</text>
       </svg>
     </div>
   );
