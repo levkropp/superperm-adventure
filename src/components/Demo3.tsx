@@ -31,6 +31,7 @@ import TeX, { V, VarKey } from "../lib/tex";
 import { DemoErrorBoundary } from "./DemoErrorBoundary";
 
 const STRUCT = buildLoopStructure(6);
+const REGION_WHEELS = loopWheelSets(STRUCT);
 const GREEDY_PATH = stringToPath(standardSuperperm(6), 6);
 const HOUSTON_PATH = stringToPath(HOUSTON_872.split(""), 6);
 
@@ -61,19 +62,17 @@ export function WheelViz() {
           label={`house ${Math.min(player.step, 6)}/6`}
         />
 
-        <Wide>
-          <RotationVillageMap
-            wheel={wheel}
-            selected={shown}
-            visitedKeys={walking ? visited : undefined}
-            onSelect={(p) => {
-              setSel(p);
-              player.reset();
-            }}
-            title="Rotation clan"
-            subtitle={walking ? `lap in progress · ${player.step - 1} tolls paid` : "click a house to re-centre"}
-          />
-        </Wide>
+        <RotationVillageMap
+          wheel={wheel}
+          selected={shown}
+          visitedKeys={walking ? visited : undefined}
+          onSelect={(p) => {
+            setSel(p);
+            player.reset();
+          }}
+          title="Rotation clan"
+          subtitle={walking ? `lap in progress · ${player.step - 1} tolls paid` : "click a house to re-centre"}
+        />
 
       </div>
     </DemoErrorBoundary>
@@ -392,7 +391,8 @@ export function LoopExplorer() {
         <Note>
           Clans are joined into circuits. Lap a clan, take a <strong>kick bridge</strong> (cost 2),
           and you land in a new clan. Five kicks bring you home, touring 30 permutations in a{" "}
-          <strong>2-loop region</strong>. There are 144 such regions in the world.
+          <strong>2-loop region</strong>. There are 144 such regions in the world. Switch to the
+          overworld to lift the six regions containing the selected clan above a shared map.
         </Note>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -438,7 +438,14 @@ export function LoopExplorer() {
         />
 
         <Wide>
-          <LoopRegionMap walk={walk} shown={player.step} generators={gens} zoom={zoom} />
+          <LoopRegionMap
+            walk={walk}
+            shown={player.step}
+            generators={gens}
+            zoom={zoom}
+            clans={STRUCT.wheels}
+            regions={REGION_WHEELS}
+          />
         </Wide>
 
         <div className="border-4 border-gold bg-[#fff2cd] px-4 py-3 shadow-[5px_5px_0_#b26a12]">

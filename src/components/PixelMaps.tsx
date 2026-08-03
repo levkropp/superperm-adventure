@@ -1,4 +1,4 @@
-import { ReactNode, useMemo } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import { allPerms, key, Perm, weight, wheelOfPerm } from "../lib/perms";
 
 type Point = { x: number; y: number };
@@ -401,13 +401,14 @@ function ClanCoat({ clan, at }: { clan: Perm; at: Point }) {
   const orbitRadius = clan.length === 3 ? 14 : clan.length === 4 ? 12 : 16;
   const markerId = `clan-arrow-${key(clan)}`;
   const direction = clan.length === 4 ? -1 : 1;
+  const coatScale = 0.82;
   const points = clan.map((_, i) => {
     const angle = -Math.PI / 2 + (direction * i * Math.PI * 2) / clan.length;
     return { x: Math.cos(angle) * orbitRadius, y: Math.sin(angle) * orbitRadius };
   });
 
   return (
-    <g transform={`translate(${at.x} ${at.y})`} aria-hidden="true">
+    <g transform={`translate(${at.x} ${at.y}) scale(${coatScale})`} aria-hidden="true">
       <defs>
         <marker id={markerId} viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
           <path d="M0 0 L8 4 L0 8 Z" fill="#b23a48" />
@@ -817,6 +818,157 @@ export function PermWorldMap({
   );
 }
 
+const REGION_STACK_COLORS = ["#e8615d", "#f0aa4f", "#f4d35e", "#65c5a2", "#4fb3c9", "#7d6fd6"];
+
+function regionStackPoint(index: number): Point {
+  const col = index % 12;
+  const row = Math.floor(index / 12);
+  return { x: 70 + col * 52 + row * 18, y: 330 + row * 11 - col * 4 };
+}
+
+function cross(o: Point, a: Point, b: Point) {
+  return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+}
+
+function convexHull(points: Point[]): Point[] {
+  const sorted = [...points].sort((a, b) => (a.x === b.x ? a.y - b.y : a.x - b.x));
+  if (sorted.length <= 2) return sorted;
+
+  const lower: Point[] = [];
+  for (const point of sorted) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], point) <= 0) lower.pop();
+    lower.push(point);
+  }
+
+  const upper: Point[] = [];
+  for (const point of [...sorted].reverse()) {
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], point) <= 0) upper.pop();
+    upper.push(point);
+  }
+
+  return [...lower.slice(0, -1), ...upper.slice(0, -1)];
+}
+
+function liftPoint(point: Point, height: number): Point {
+  return { x: point.x + height * 0.42, y: point.y - height };
+}
+
+export function RegionStackMap({
+  clans,
+  regions,
+  selectedClanKey,
+}: {
+  clans: Perm[][];
+  regions: number[][];
+  selectedClanKey?: string;
+}) {
+  const basePoints = useMemo(() => clans.map((_, i) => regionStackPoint(i)), [clans]);
+  const regionsForClan = useMemo(() => {
+    const memberships = Array.from({ length: clans.length }, () => [] as number[]);
+    regions.forEach((memberIds, regionId) => {
+      memberIds.forEach((clanId) => memberships[clanId]?.push(regionId));
+    });
+    return memberships;
+  }, [clans.length, regions]);
+  const findClan = (target?: string) => clans.findIndex((clan) => clan.some((permutation) => key(permutation) === target));
+  const initialSelected = Math.max(0, findClan(selectedClanKey));
+  const [selectedIndex, setSelectedIndex] = useState(initialSelected);
+
+  useEffect(() => {
+    if (selectedClanKey === undefined) return;
+    const next = findClan(selectedClanKey);
+    if (next >= 0) setSelectedIndex(next);
+  }, [clans, selectedClanKey]);
+
+  const selected = Math.min(selectedIndex, clans.length - 1);
+  const selectedLabel = key(clans[selected]?.[0] ?? []);
+  const selectedRegionIds = regionsForClan[selected] ?? [];
+  const cols = 12;
+  const rows = Math.ceil(clans.length / cols);
+  const ground = [basePoints[0], basePoints[cols - 1], basePoints[clans.length - 1], basePoints[clans.length - cols]];
+
+  return (
+    <MapFrame
+      title="Overworld · six-region stack"
+      w={900}
+      h={540}
+      subtitle={`${selectedLabel} clan · member of ${selectedRegionIds.length} regions`}
+      footer={
+        <div className="flex flex-wrap justify-between gap-2">
+          <span>base plane = 120 clans</span>
+          <span>raised planes = the selected clan's regions</span>
+          <span>click any clan to inspect its six memberships</span>
+        </div>
+      }
+    >
+      <svg viewBox="0 0 900 540" role="img" aria-label={`three-dimensional region view for clan ${selectedLabel}`}>
+        <TileField w={900} h={540} dense />
+        <polygon points={ground.map((point) => `${point.x},${point.y}`).join(" ")} fill="#173e2d" stroke="#65c5a2" strokeWidth="3" opacity="0.9" />
+        {Array.from({ length: rows }, (_, row) => {
+          const first = row * cols;
+          const last = Math.min(first + cols - 1, clans.length - 1);
+          return <line key={`row-${row}`} x1={basePoints[first].x} y1={basePoints[first].y} x2={basePoints[last].x} y2={basePoints[last].y} stroke="#65c5a2" strokeOpacity="0.22" strokeWidth="1" />;
+        })}
+        {Array.from({ length: cols }, (_, col) => {
+          const first = col;
+          const last = col + (rows - 1) * cols;
+          return <line key={`col-${col}`} x1={basePoints[first].x} y1={basePoints[first].y} x2={basePoints[Math.min(last, clans.length - 1)].x} y2={basePoints[Math.min(last, clans.length - 1)].y} stroke="#65c5a2" strokeOpacity="0.22" strokeWidth="1" />;
+        })}
+
+        {clans.map((clan, clanId) => {
+          const point = basePoints[clanId];
+          const active = clanId === selected;
+          return (
+            <g
+              key={clanId}
+              transform={`translate(${point.x} ${point.y})`}
+              role="button"
+              tabIndex={0}
+              aria-label={`select clan ${key(clan[0])}`}
+              onClick={() => setSelectedIndex(clanId)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") setSelectedIndex(clanId);
+              }}
+              className="cursor-pointer"
+            >
+              <title>{key(clan[0])} clan · {regionsForClan[clanId]?.length ?? 0} regions</title>
+              <rect x="-8" y="-5" width="16" height="10" fill={active ? "#fff176" : "#5c9270"} stroke="#081b18" strokeWidth={active ? 3 : 1.5} />
+            </g>
+          );
+        })}
+
+        {selectedRegionIds.map((regionId, layer) => {
+          const height = 38 + layer * 32;
+          const memberIds = regions[regionId] ?? [];
+          const elevated = memberIds.map((clanId) => liftPoint(basePoints[clanId], height));
+          const boundary = convexHull(elevated);
+          const color = REGION_STACK_COLORS[layer % REGION_STACK_COLORS.length];
+          const selectedPoint = liftPoint(basePoints[selected], height);
+          return (
+            <g key={regionId}>
+              {memberIds.map((clanId) => {
+                const base = basePoints[clanId];
+                const top = liftPoint(base, height);
+                return <line key={`stem-${clanId}`} x1={base.x} y1={base.y} x2={top.x} y2={top.y} stroke={color} strokeWidth={clanId === selected ? 4 : 2} strokeOpacity={0.55} />;
+              })}
+              <polygon points={boundary.map((point) => `${point.x},${point.y}`).join(" ")} fill={color} fillOpacity="0.18" stroke={color} strokeWidth="3" strokeDasharray="7 5" />
+              {elevated.map((point, i) => (
+                <circle key={`node-${i}`} cx={point.x} cy={point.y} r={memberIds[i] === selected ? 7 : 4} fill={memberIds[i] === selected ? "#fff176" : color} stroke="#081b18" strokeWidth="2" />
+              ))}
+              <text x={selectedPoint.x + 12} y={selectedPoint.y - 5} fontFamily="IBM Plex Mono, monospace" fontSize="11" fontWeight="700" fill={color}>
+                R{regionId + 1}
+              </text>
+            </g>
+          );
+        })}
+        <text x="38" y="42" fontFamily="IBM Plex Mono, monospace" fontSize="13" fontWeight="700" fill="#fff4cb">
+          six overlapping region boundaries for {selectedLabel}
+        </text>
+      </svg>
+    </MapFrame>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /*  Focused scenes & road tests                                        */
 /* ------------------------------------------------------------------ */
@@ -903,8 +1055,6 @@ export function RotationVillageMap({
     >
       <svg viewBox={`0 0 ${MAP_W} ${MAP_H}`} role="img" aria-label="rotation wheel drawn as a clan">
         <TileField w={MAP_W} h={MAP_H} />
-        <ellipse cx={center.x} cy={center.y} rx="118" ry="66" fill="#286f75" stroke="#081b18" strokeWidth="8" />
-        <ellipse cx={center.x} cy={center.y} rx="100" ry="52" fill="#3d92a0" stroke="#73c9bd" strokeWidth="3" strokeDasharray="6 5" />
         <ClanCoat clan={clan} at={center} />
         {points.map((p, i) => (
           <Road key={i} from={p} to={points[(i + 1) % points.length]} cost={1} />
@@ -1037,11 +1187,15 @@ export function LoopRegionMap({
   shown,
   generators,
   zoom = "local",
+  clans,
+  regions,
 }: {
   walk: Perm[];
   shown: number;
   generators: Set<string>;
   zoom?: "local" | "world";
+  clans: Perm[][];
+  regions: number[][];
 }) {
   const centers: Point[] = [
     { x: 116, y: 96 },
@@ -1060,19 +1214,7 @@ export function LoopRegionMap({
 
   if (zoom === "world") {
     return (
-      <PermWorldMap
-        n={6}
-        path={walk.slice(0, visible)}
-        title="2-Loop in World Perspective (144 Regions)"
-        subtitle="Zoomed out: 30 houses highlighted inside 720 total houses"
-        highlight={generators}
-        footer={
-          <div className="flex flex-wrap justify-between gap-2">
-            <span>Highlighted region = 30 houses in 5 clans</span>
-            <span>Orange = 5 generator gates</span>
-          </div>
-        }
-      />
+      <RegionStackMap clans={clans} regions={regions} selectedClanKey={key(walk[0])} />
     );
   }
 

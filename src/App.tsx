@@ -271,19 +271,17 @@ export default function App() {
           Inside a clan, travel costs 1 per step; leaving costs at least 2.
         </Callout>
 
-        <Wide>
-          <DemoErrorBoundary title="Demo 9 Error">
-            <WheelViz />
-          </DemoErrorBoundary>
-        </Wide>
+        <div className="grid gap-7 lg:grid-cols-2 lg:items-center">
+          <WheelViz />
+          <P>
+            Clans are closed rings, so lapping one gets you six houses and then strands you: the
+            cheap road just brings you back to where you started. To reach the other 714 houses the
+            traveller has to leave, and leaving is where the money goes. It turns out there is only
+            one affordable way out.
+          </P>
+        </div>
 
         {/* The Kick */}
-        <P>
-          Clans are closed rings, so lapping one gets you six houses and then strands you: the
-          cheap road just brings you back to where you started. To reach the other 714 houses the
-          traveller has to leave, and leaving is where the money goes. It turns out there is only
-          one affordable way out.
-        </P>
 
         <Callout variant="idea" title="Crossing between clans: the kick">
           A <strong>kick</strong> takes the first two symbols, swaps them, and sends them to the
