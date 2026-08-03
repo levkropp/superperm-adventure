@@ -171,20 +171,40 @@ function N4FederationView({ model, selected, onSelect }: { model: RegionModel; s
           const center = centers.reduce((sum, point) => ({ x: sum.x + point.x / centers.length, y: sum.y + point.y / centers.length, z: 1.35 }), { x: 0, y: 0, z: 1.35 });
           const radiusX = Math.max(...centers.map((point) => Math.abs(point.x - center.x))) + 1.3;
           const radiusY = Math.max(...centers.map((point) => Math.abs(point.y - center.y))) + 1.1;
+          const radiusZ = 1.55;
           const color = i === 0 ? "#65c5a2" : "#f0aa4f";
+          const particles = Array.from({ length: 96 }, (_, particle) => {
+            const theta = ((particle * 137 + regionId * 41) % 360) * (Math.PI / 180);
+            const phi = ((particle * 83 + regionId * 17) % 180) * (Math.PI / 180);
+            const radial = 0.32 + ((particle * 47) % 100) / 100 * 0.68;
+            return projectLabPoint(
+              {
+                x: center.x + Math.cos(theta) * Math.sin(phi) * radiusX * radial,
+                y: center.y + Math.sin(theta) * Math.sin(phi) * radiusY * radial,
+                z: center.z + Math.cos(phi) * radiusZ * radial,
+              },
+              camera.yaw,
+              camera.pitch,
+            );
+          }).sort((a, b) => b.depth - a.depth);
+          const rings = [
+            Array.from({ length: 25 }, (_, point) => {
+              const angle = (point * Math.PI * 2) / 24;
+              return projectLabPoint({ x: center.x + Math.cos(angle) * radiusX, y: center.y + Math.sin(angle) * radiusY, z: center.z }, camera.yaw, camera.pitch);
+            }),
+            Array.from({ length: 25 }, (_, point) => {
+              const angle = (point * Math.PI * 2) / 24;
+              return projectLabPoint({ x: center.x + Math.cos(angle) * radiusX, y: center.y, z: center.z + Math.sin(angle) * radiusZ }, camera.yaw, camera.pitch);
+            }),
+            Array.from({ length: 25 }, (_, point) => {
+              const angle = (point * Math.PI * 2) / 24;
+              return projectLabPoint({ x: center.x, y: center.y + Math.cos(angle) * radiusY, z: center.z + Math.sin(angle) * radiusZ }, camera.yaw, camera.pitch);
+            }),
+          ];
           return (
             <g key={regionId}>
-              {Array.from({ length: 7 }, (_, slice) => {
-                const t = slice / 6;
-                const z = t * 2.7;
-                const width = radiusX * (0.25 + Math.sin(Math.PI * t) * 0.9);
-                const height = radiusY * (0.25 + Math.sin(Math.PI * t) * 0.9);
-                const cloud = Array.from({ length: 12 }, (_, point) => {
-                  const angle = (point * Math.PI * 2) / 12;
-                  return projectLabPoint({ x: center.x + Math.cos(angle) * width, y: center.y + Math.sin(angle) * height, z }, camera.yaw, camera.pitch);
-                });
-                return <polygon key={slice} points={cloud.map((point) => `${point.x},${point.y}`).join(" ")} fill={color} fillOpacity={0.04} stroke={color} strokeWidth="1.5" strokeDasharray="5 5" />;
-              })}
+              {particles.map((point, particle) => <circle key={particle} cx={point.x} cy={point.y} r={Math.max(1.2, 2.8 - point.depth * 0.025)} fill={color} opacity="0.16" />)}
+              {rings.map((ring, ringId) => <polyline key={ringId} points={ring.map((point) => `${point.x},${point.y}`).join(" ")} fill="none" stroke={color} strokeWidth="1.2" strokeDasharray="4 5" opacity="0.35" />)}
               {memberIds.map((clanId) => {
                 const regionCenter = projectLabPoint({ ...center, z: 1.35 }, camera.yaw, camera.pitch);
                 return <line key={clanId} x1={projectedBase[clanId].x} y1={projectedBase[clanId].y} x2={regionCenter.x} y2={regionCenter.y} stroke={clanId === selected ? "#fff176" : color} strokeWidth={clanId === selected ? 4 : 2} opacity="0.78" />;
@@ -309,7 +329,7 @@ export default function RegionLab() {
           <LabModel model={model6} selected={selected6} onSelect={setSelected6}><ExplodedFederations model={model6} selected={selected6} /></LabModel>
         </LabCard>
 
-        <LabCard title="2. Incidence web + draggable 3D · n = 4" description="Each house cluster is a clan. The two floating nodes are federations, and the selected clan is connected to each federation it belongs to.">
+        <LabCard title="2. Incidence web + draggable 3D · n = 4" description="Each house cluster is a clan. The two gas clouds are federations, and the selected clan is connected to each federation it belongs to. At n = 4 they are disjoint; the six-region overlap begins at n = 6.">
           <div className="lg:col-span-2">
             <LabModel model={model4} selected={selected4} onSelect={setSelected4}><N4FederationView model={model4} selected={selected4} onSelect={setSelected4} /></LabModel>
           </div>
