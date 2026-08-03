@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { buildLoopStructure, key, loopWheelSets, Perm } from "../lib/perms";
-import { ClanCoat, House } from "./PixelMaps";
+import { ClanCoat } from "./PixelMaps";
 
 type RegionModel = {
   n: number;
@@ -235,104 +235,6 @@ function N4FederationView({ model, selected, onSelect }: { model: RegionModel; s
   );
 }
 
-function useN4Orbit() {
-  const [camera, setCamera] = useState({ yaw: -0.55, pitch: 0.65 });
-  const drag = useRef<{ x: number; y: number } | null>(null);
-  const onPointerDown = (event: React.PointerEvent<SVGSVGElement>) => {
-    event.currentTarget.setPointerCapture(event.pointerId);
-    drag.current = { x: event.clientX, y: event.clientY };
-  };
-  const onPointerMove = (event: React.PointerEvent<SVGSVGElement>) => {
-    if (!drag.current) return;
-    const dx = event.clientX - drag.current.x;
-    const dy = event.clientY - drag.current.y;
-    drag.current = { x: event.clientX, y: event.clientY };
-    setCamera((previous) => ({ yaw: previous.yaw + dx * 0.012, pitch: Math.max(-1.1, Math.min(1.1, previous.pitch + dy * 0.012)) }));
-  };
-  const onPointerUp = (event: React.PointerEvent<SVGSVGElement>) => {
-    drag.current = null;
-    event.currentTarget.releasePointerCapture(event.pointerId);
-  };
-  return { camera, onPointerDown, onPointerMove, onPointerUp };
-}
-
-function N4OrbitFrame({ children, onPointerDown, onPointerMove, onPointerUp, label }: { children: React.ReactNode; onPointerDown: (event: React.PointerEvent<SVGSVGElement>) => void; onPointerMove: (event: React.PointerEvent<SVGSVGElement>) => void; onPointerUp: (event: React.PointerEvent<SVGSVGElement>) => void; label: string }) {
-  return (
-    <svg viewBox="0 0 900 520" className="w-full touch-none cursor-grab border-3 border-ink bg-[#10231f] active:cursor-grabbing" role="img" aria-label={label} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
-      <rect width="900" height="520" fill="#10231f" />
-      <text x="24" y="30" fontFamily="IBM Plex Mono, monospace" fontSize="13" fontWeight="700" fill="#fff4cb">drag to orbit</text>
-      {children}
-    </svg>
-  );
-}
-
-function N4WebView({ model, selected }: { model: RegionModel; selected: number }) {
-  const { camera, onPointerDown, onPointerMove, onPointerUp } = useN4Orbit();
-  const points = N4_BASE.map((point) => projectLabPoint(point, camera.yaw, camera.pitch));
-  const regionPoints = model.regions.map((_, i) => projectLabPoint({ x: i === 0 ? -5 : 5, y: 0, z: 2.5 }, camera.yaw, camera.pitch));
-  return (
-    <div>
-      <ModelTag model={model} selected={selected} />
-      <N4OrbitFrame onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} label="3D n equals 4 incidence web">
-        {model.regions.map((memberIds, regionId) => (
-          <g key={regionId}>
-            {memberIds.map((clanId) => <line key={clanId} x1={points[clanId].x} y1={points[clanId].y} x2={regionPoints[regionId].x} y2={regionPoints[regionId].y} stroke={clanId === selected ? "#fff176" : regionId === 0 ? "#65c5a2" : "#f0aa4f"} strokeWidth={clanId === selected ? 4 : 2} opacity={clanId === selected ? 1 : 0.65} />)}
-            <circle cx={regionPoints[regionId].x} cy={regionPoints[regionId].y} r="25" fill={regionId === 0 ? "#65c5a2" : "#f0aa4f"} stroke="#081b18" strokeWidth="4" />
-            <text x={regionPoints[regionId].x} y={regionPoints[regionId].y + 4} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="13" fontWeight="700" fill="#081b18">R{regionId + 1}</text>
-          </g>
-        ))}
-        {model.clans.map((clan, clanId) => <ClanCoat key={clanId} clan={clan[0]} at={{ x: points[clanId].x, y: points[clanId].y }} scale={clanId === selected ? 0.7 : 0.5} />)}
-      </N4OrbitFrame>
-    </div>
-  );
-}
-
-function N4OrbitView({ model, selected }: { model: RegionModel; selected: number }) {
-  const { camera, onPointerDown, onPointerMove, onPointerUp } = useN4Orbit();
-  return (
-    <div>
-      <ModelTag model={model} selected={selected} />
-      <N4OrbitFrame onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} label="3D n equals 4 orbital federation view">
-        {model.regions.map((memberIds, regionId) => {
-          const center = { x: regionId === 0 ? -3.2 : 3.2, y: 0, z: 2.2 };
-          const color = regionId === 0 ? "#65c5a2" : "#f0aa4f";
-          const orbit = Array.from({ length: 25 }, (_, i) => {
-            const angle = (i * Math.PI * 2) / 24;
-            return projectLabPoint({ x: center.x + Math.cos(angle) * 2.6, y: center.y + Math.sin(angle) * 1.5, z: center.z + Math.sin(angle) * 0.75 }, camera.yaw, camera.pitch);
-          });
-          return (
-            <g key={regionId}>
-              <polyline points={orbit.map((point) => `${point.x},${point.y}`).join(" ")} fill="none" stroke={color} strokeWidth={regionId === 0 ? 5 : 4} opacity="0.8" />
-              <text x={orbit[0].x} y={orbit[0].y - 10} fontFamily="IBM Plex Mono, monospace" fontSize="13" fontWeight="700" fill={color}>R{regionId + 1}</text>
-              {memberIds.map((clanId, i) => {
-                const angle = -Math.PI / 2 + (i * Math.PI * 2) / memberIds.length;
-                const point = projectLabPoint({ x: center.x + Math.cos(angle) * 2.6, y: center.y + Math.sin(angle) * 1.5, z: center.z + Math.sin(angle) * 0.75 }, camera.yaw, camera.pitch);
-                return <g key={clanId} opacity={clanId === selected ? 1 : 0.75}><line x1={projectLabPoint(center, camera.yaw, camera.pitch).x} y1={projectLabPoint(center, camera.yaw, camera.pitch).y} x2={point.x} y2={point.y} stroke={color} strokeWidth="2" /><ClanCoat clan={model.clans[clanId][0]} at={{ x: point.x, y: point.y }} scale={clanId === selected ? 0.65 : 0.48} /></g>;
-              })}
-            </g>
-          );
-        })}
-      </N4OrbitFrame>
-    </div>
-  );
-}
-
-function N4TownView({ model, selected }: { model: RegionModel; selected: number }) {
-  const { camera, onPointerDown, onPointerMove, onPointerUp } = useN4Orbit();
-  const offsets = [{ x: -0.45, y: -0.3, z: 0.05 }, { x: 0.45, y: -0.3, z: 0.1 }, { x: -0.45, y: 0.3, z: 0 }, { x: 0.45, y: 0.3, z: 0.08 }];
-  return (
-    <div>
-      <ModelTag model={model} selected={selected} />
-      <N4OrbitFrame onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} label="3D n equals 4 town clusters">
-        {model.clans.map((clan, clanId) => {
-          const center = projectLabPoint(N4_BASE[clanId], camera.yaw, camera.pitch);
-          return <g key={clanId} opacity={clanId === selected ? 1 : 0.55}><ClanCoat clan={clan[0]} at={{ x: center.x, y: center.y - 30 }} scale={clanId === selected ? 0.62 : 0.45} />{clan.map((town, i) => { const offset = offsets[i]; const point = projectLabPoint({ x: N4_BASE[clanId].x + offset.x, y: N4_BASE[clanId].y + offset.y, z: offset.z }, camera.yaw, camera.pitch); return <House key={key(town)} p={town} at={{ x: point.x, y: point.y }} size="sm" state={clanId === selected ? "current" : "unvisited"} />; })}</g>;
-        })}
-      </N4OrbitFrame>
-    </div>
-  );
-}
-
 function LabModel({ model, selected, onSelect, children, showSelector = true }: { model: RegionModel; selected: number; onSelect: (id: number) => void; children: React.ReactNode; showSelector?: boolean }) {
   return (
     <div className="border-3 border-ink bg-[#f7efcf] p-3">
@@ -358,34 +260,17 @@ export default function RegionLab() {
           <div className="font-mono text-[12px] font-bold uppercase tracking-[0.14em] text-accent">Visualization lab</div>
           <h1 className="mt-2 font-serif text-4xl font-semibold sm:text-6xl">How should a 2-loop region look?</h1>
           <p className="mt-4 max-w-3xl text-lg leading-relaxed text-ink-soft">
-            Compare four different 3D ways to show the n = 4 clans and their federations.
+            This focused n = 4 explorer shows clans, towns, and their federation clouds in one draggable 3D scene.
             The main article is unchanged while this side lab is open at <code>?lab=regions</code>.
           </p>
         </header>
 
-        <LabCard title="1. Gas-cloud incidence" description="Clouds surround the three clans in each federation; the selected clan’s membership edges glow.">
+        <LabCard title="Gas-cloud incidence" description="Clouds surround the three clans in each federation; the selected clan’s membership edges glow.">
           <div className="lg:col-span-2">
             <LabModel model={model4} selected={selected4} onSelect={setSelected4} showSelector={false}><N4FederationView model={model4} selected={selected4} onSelect={setSelected4} /></LabModel>
           </div>
         </LabCard>
 
-        <LabCard title="2. 3D incidence web" description="Federations float as nodes and every clan-to-federation membership is an edge.">
-          <div className="lg:col-span-2">
-            <LabModel model={model4} selected={selected4} onSelect={setSelected4}><N4WebView model={model4} selected={selected4} /></LabModel>
-          </div>
-        </LabCard>
-
-        <LabCard title="3. Orbital federations" description="Each federation is a 3D orbit with its three clan coats moving around a central loop.">
-          <div className="lg:col-span-2">
-            <LabModel model={model4} selected={selected4} onSelect={setSelected4}><N4OrbitView model={model4} selected={selected4} /></LabModel>
-          </div>
-        </LabCard>
-
-        <LabCard title="4. Town clusters in 3D" description="The four towns in each clan stay together as a spatial cluster, with the coat identifying the clan above them.">
-          <div className="lg:col-span-2">
-            <LabModel model={model4} selected={selected4} onSelect={setSelected4}><N4TownView model={model4} selected={selected4} /></LabModel>
-          </div>
-        </LabCard>
 
       </div>
     </main>
