@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { buildLoopStructure, key, loopWheelSets, Perm } from "../lib/perms";
 import { ClanCoat } from "./PixelMaps";
 
@@ -91,8 +91,17 @@ function N4FederationView({ model, selected, onSelect }: { model: RegionModel; s
   const suppressClick = useRef(false);
   const regionIds = model.regions.map((_, regionId) => regionId);
   const [selectedRegion, setSelectedRegion] = useState<number | null>(null);
-  const activeRegionIds = selectedRegion === null ? model.memberships[selected] : [selectedRegion];
+  const [cycleIndex, setCycleIndex] = useState(0);
+  const clanRegions = model.memberships[selected];
+  const activeRegionId = selectedRegion ?? clanRegions[cycleIndex % Math.max(1, clanRegions.length)];
+  const activeRegionIds = selectedRegion === null ? [activeRegionId] : [selectedRegion];
   const highlightedClans = new Set(selectedRegion === null ? [selected] : model.regions[selectedRegion]);
+
+  useEffect(() => {
+    if (selectedRegion !== null || clanRegions.length <= 1) return;
+    const timer = window.setInterval(() => setCycleIndex((index) => (index + 1) % clanRegions.length), 500);
+    return () => window.clearInterval(timer);
+  }, [clanRegions, selectedRegion]);
 
   const handleDown = (event: React.PointerEvent<SVGSVGElement>) => {
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -133,6 +142,7 @@ function N4FederationView({ model, selected, onSelect }: { model: RegionModel; s
               key={clanId}
               onClick={() => {
                 setSelectedRegion(null);
+                setCycleIndex(0);
                 onSelect(clanId);
               }}
               className={`block w-full border-2 border-ink px-1 py-1 font-mono text-[11px] font-bold ${clanId === selected && selectedRegion === null ? "bg-[#fff176] shadow-[2px_2px_0_#1d1e33]" : highlightedClans.has(clanId) ? "bg-[#f6dcab]" : "bg-[#fffbe9]"}`}
@@ -153,15 +163,17 @@ function N4FederationView({ model, selected, onSelect }: { model: RegionModel; s
           onPointerCancel={handleUp}
         >
         <rect width="900" height="520" fill="#10231f" />
-        {regionIds.map((regionId, i) => {
+        {regionIds.map((regionId) => {
           const memberIds = model.regions[regionId];
           const centers = memberIds.map((clanId) => N4_BASE[clanId]);
           const center = centers.reduce((sum, point) => ({ x: sum.x + point.x / centers.length, y: sum.y + point.y / centers.length, z: 1.35 }), { x: 0, y: 0, z: 1.35 });
           const radiusX = Math.max(...centers.map((point) => Math.abs(point.x - center.x))) + 1.3;
-          const radiusY = (Math.max(...centers.map((point) => Math.abs(point.y - center.y))) + 1.1) * 3;
-          const radiusZ = 1.55;
-          const color = FEDERATION_COLORS[i % FEDERATION_COLORS.length];
+          const radiusY = Math.max(...centers.map((point) => Math.abs(point.y - center.y))) + 1.1;
+          const radiusZ = 1.55 * 3;
           const active = activeRegionIds.includes(regionId);
+          const visible = selectedRegion !== null || active;
+          if (!visible) return null;
+          const color = selectedRegion !== null ? (active ? "#2aa198" : "#cb4b16") : FEDERATION_COLORS[cycleIndex % FEDERATION_COLORS.length];
           const particles = Array.from({ length: 96 }, (_, particle) => {
             const theta = ((particle * 137 + regionId * 41) % 360) * (Math.PI / 180);
             const phi = ((particle * 83 + regionId * 17) % 180) * (Math.PI / 180);
@@ -192,15 +204,15 @@ function N4FederationView({ model, selected, onSelect }: { model: RegionModel; s
           ];
           return (
             <g key={regionId}>
-              {particles.map((point, particle) => <circle key={particle} cx={point.x} cy={point.y} r={Math.max(1.2, 2.8 - point.depth * 0.025)} fill={color} opacity={active ? 0.3 : 0.035} />)}
-              {rings.map((ring, ringId) => <polyline key={ringId} points={ring.map((point) => `${point.x},${point.y}`).join(" ")} fill="none" stroke={color} strokeWidth={active ? 1.8 : 1} strokeDasharray="4 5" opacity={active ? 0.55 : 0.12} />)}
+              {particles.map((point, particle) => <circle key={particle} cx={point.x} cy={point.y} r={Math.max(1.5, 3.6 - point.depth * 0.02)} fill={color} opacity="0.82" />)}
+              {rings.map((ring, ringId) => <polyline key={ringId} points={ring.map((point) => `${point.x},${point.y}`).join(" ")} fill="none" stroke={color} strokeWidth="2" strokeDasharray="4 5" opacity="0.95" />)}
               {memberIds.map((clanId) => {
                 const regionCenter = projectLabPoint({ ...center, z: 1.35 }, camera.yaw, camera.pitch);
-                return <line key={clanId} x1={projectedBase[clanId].x} y1={projectedBase[clanId].y} x2={regionCenter.x} y2={regionCenter.y} stroke={clanId === selected ? "#fff176" : color} strokeWidth={clanId === selected ? 4 : 2} opacity={active ? 0.78 : 0.15} />;
+                return <line key={clanId} x1={projectedBase[clanId].x} y1={projectedBase[clanId].y} x2={regionCenter.x} y2={regionCenter.y} stroke={clanId === selected ? "#fff176" : color} strokeWidth={clanId === selected ? 4 : 2} opacity="0.9" />;
               })}
               {(() => {
                 const labelPoint = projectLabPoint({ ...center, z: 2.7 }, camera.yaw, camera.pitch);
-                return <text x={labelPoint.x} y={labelPoint.y - 8} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="13" fontWeight="700" fill={color} opacity={active ? 1 : 0.35}>R{regionId + 1} federation</text>;
+                return <text x={labelPoint.x} y={labelPoint.y - 8} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="13" fontWeight="700" fill={color}>R{regionId + 1} federation</text>;
               })()}
             </g>
           );
@@ -225,7 +237,7 @@ function N4FederationView({ model, selected, onSelect }: { model: RegionModel; s
               <button
                 key={regionId}
                 onClick={() => setSelectedRegion(regionId)}
-                className={`block w-full border-2 border-ink px-1 py-1 font-mono text-[11px] font-bold ${selectedRegion === regionId ? "bg-[#fff176] shadow-[2px_2px_0_#1d1e33]" : active ? "bg-[#f6dcab]" : "bg-[#fffbe9]"}`}
+                className={`block w-full border-2 border-ink px-1 py-1 font-mono text-[11px] font-bold ${selectedRegion === regionId ? "bg-[#2aa198] text-white shadow-[2px_2px_0_#1d1e33]" : active ? "bg-[#f6dcab]" : "bg-[#fffbe9]"}`}
               >
                 R{regionId + 1} <span className="font-normal">({memberIds.length})</span>
               </button>
