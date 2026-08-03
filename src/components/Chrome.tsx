@@ -29,38 +29,12 @@ export function Hero() {
 
 export function Footer() {
   return (
-    <footer className="border-t-8 border-[#0b121f] bg-[#1d1e33] text-[#ddd4b5]">
-      <div className="mx-auto max-w-3xl px-5 py-14 text-center">
-        <div className="mx-auto mb-7 h-5 w-5 bg-[#f4d35e] shadow-[20px_0_0_#65c5a2,-20px_0_0_#b23a48]" />
-        <p className="font-serif text-2xl leading-relaxed text-[#fff4cb] italic">
-          “The shortest binge that covers every order.”
-        </p>
-        <p className="mx-auto mt-3 max-w-xl leading-relaxed">
-          A problem small enough for a high-schooler to hold, and deep enough to resist
-          everyone.
-        </p>
-        <div className="mx-auto mt-8 grid max-w-xl gap-4 text-left text-[16px] leading-relaxed sm:grid-cols-2">
-          <div className="border-3 border-[#080e18] bg-[#2d304e] p-4 shadow-[4px_4px_0_#080e18]">
-            <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#fff176]">
-              Primary source
-            </div>
-            <a className="text-[#7fdcb4] underline" href="https://github.com/levkropp/superperm-adventure" target="_blank" rel="noreferrer">
-              github.com/levkropp/superperm-adventure
-            </a>
-          </div>
-          <div className="border-3 border-[#080e18] bg-[#2d304e] p-4 shadow-[4px_4px_0_#080e18]">
-            <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#fff176]">
-              Background
-            </div>
-            <a className="text-[#7fdcb4] underline" href="https://oeis.org/A180632" target="_blank" rel="noreferrer">
-              OEIS A180632
-            </a>
-            , Engen and Vatter (2021), Quanta, Numberphile.
-          </div>
-        </div>
-        <p className="mt-8 font-mono text-[11px] tracking-wide text-[#8f91a3]">
-          Every figure is computed live in your browser.
-        </p>
+    <footer className="border-t-8 border-[#0b121f] bg-[#1d1e33]">
+      <div className="mx-auto px-5 py-10 text-center">
+        <div
+          aria-hidden="true"
+          className="mx-auto h-5 w-5 bg-[#f4d35e] shadow-[20px_0_0_#65c5a2,-20px_0_0_#b23a48]"
+        />
       </div>
     </footer>
   );
