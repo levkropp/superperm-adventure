@@ -281,37 +281,79 @@ const N2_POINTS: Point[] = [
 ];
 
 const N3_POINTS: Point[] = [
-  { x: 120, y: 125 },
-  { x: 85, y: 200 },
-  { x: 155, y: 200 },
-  { x: 485, y: 125 },
-  { x: 450, y: 200 },
-  { x: 520, y: 200 },
+  { x: 110, y: 105 },
+  { x: 320, y: 72 },
+  { x: 530, y: 112 },
+  { x: 498, y: 268 },
+  { x: 288, y: 288 },
+  { x: 96, y: 252 },
 ];
 
-const N4_POINTS: Point[] = [
-  ...[105, 320, 535].flatMap((x) => [
-    { x: x - 24, y: 92 },
-    { x: x + 24, y: 92 },
-    { x: x - 24, y: 140 },
-    { x: x + 24, y: 140 },
-  ]),
-  ...[105, 320, 535].flatMap((x) => [
-    { x: x - 24, y: 238 },
-    { x: x + 24, y: 238 },
-    { x: x - 24, y: 286 },
-    { x: x + 24, y: 286 },
-  ]),
+const N3_VILLAGE_POINTS: Point[] = [
+  { x: 90, y: 170 },
+  { x: 130, y: 170 },
+  { x: 170, y: 170 },
+  { x: 470, y: 170 },
+  { x: 510, y: 170 },
+  { x: 550, y: 170 },
 ];
 
-function pointFor(n: number, index: number): Point {
+const N4_VILLAGE_POINTS: Point[] = [
+  ...[105, 320, 535].flatMap((x) => [-63, -21, 21, 63].map((offset) => ({ x: x + offset, y: 100 }))),
+  ...[105, 320, 535].flatMap((x) => [-63, -21, 21, 63].map((offset) => ({ x: x + offset, y: 240 }))),
+];
+
+const N3_VILLAGE_ORDER: Perm[] = [
+  [1, 2, 3],
+  [2, 3, 1],
+  [3, 1, 2],
+  [2, 1, 3],
+  [1, 3, 2],
+  [3, 2, 1],
+];
+
+const N4_VILLAGE_ORDER: Perm[] = [
+  [1, 2, 3, 4],
+  [2, 3, 4, 1],
+  [3, 4, 1, 2],
+  [4, 1, 2, 3],
+  [2, 3, 1, 4],
+  [3, 1, 4, 2],
+  [1, 4, 2, 3],
+  [4, 2, 3, 1],
+  [3, 1, 2, 4],
+  [1, 2, 4, 3],
+  [2, 4, 3, 1],
+  [4, 3, 1, 2],
+  [2, 1, 3, 4],
+  [1, 3, 4, 2],
+  [3, 4, 2, 1],
+  [4, 2, 1, 3],
+  [1, 3, 2, 4],
+  [3, 2, 4, 1],
+  [2, 4, 1, 3],
+  [4, 1, 3, 2],
+  [3, 2, 1, 4],
+  [2, 1, 4, 3],
+  [1, 4, 3, 2],
+  [4, 3, 2, 1],
+];
+
+function pointFor(n: number, index: number, villageLayout: boolean): Point {
   if (n === 2) return N2_POINTS[index];
-  if (n === 3) return N3_POINTS[index];
-  return N4_POINTS[index];
+  if (n === 3) return villageLayout ? N3_VILLAGE_POINTS[index] : N3_POINTS[index];
+  if (villageLayout) return N4_VILLAGE_POINTS[index];
+  const col = index % 6;
+  const row = Math.floor(index / 6);
+  const jx = ((row * 17 + col * 11) % 17) - 8;
+  const jy = ((row * 13 + col * 7) % 13) - 6;
+  return { x: 76 + col * 99 + jx, y: 66 + row * 80 + jy };
 }
 
 function villageOrder(perms: Perm[], n: number): Perm[] {
   if (n === 2) return perms;
+  if (n === 3) return N3_VILLAGE_ORDER;
+  if (n === 4) return N4_VILLAGE_ORDER;
   const out: Perm[] = [];
   const seen = new Set<string>();
   for (const p of perms) {
@@ -323,17 +365,17 @@ function villageOrder(perms: Perm[], n: number): Perm[] {
   return out;
 }
 
-function VillageFields({ n }: { n: 2 | 3 | 4 }) {
-  if (n === 2) return null;
+function VillageFields({ n, villageLayout }: { n: 2 | 3 | 4; villageLayout: boolean }) {
+  if (n === 2 || !villageLayout) return null;
   const fields =
     n === 3
       ? [
-          { x: 48, y: 65, w: 145, h: 185 },
-          { x: 397, y: 65, w: 145, h: 185 },
+          { x: 48, y: 100, w: 145, h: 140 },
+          { x: 397, y: 100, w: 145, h: 140 },
         ]
       : [
-          ...[105, 320, 535].map((x) => ({ x: x - 62, y: 42, w: 124, h: 148 })),
-          ...[105, 320, 535].map((x) => ({ x: x - 62, y: 188, w: 124, h: 126 })),
+          ...[105, 320, 535].map((x) => ({ x: x - 85, y: 50, w: 170, h: 110 })),
+          ...[105, 320, 535].map((x) => ({ x: x - 85, y: 190, w: 170, h: 110 })),
         ];
 
   return (
@@ -364,6 +406,7 @@ export function TopDownTspMap({
   onEdgeSelected,
   costLens = true,
   spawnHint = false,
+  villageLayout = false,
 }: {
   n: 2 | 3 | 4;
   path: Perm[];
@@ -376,12 +419,17 @@ export function TopDownTspMap({
   costLens?: boolean;
   /** Points to the 123 house before the animated route has a valid window. */
   spawnHint?: boolean;
+  /** Groups houses into rotation villages for the larger route demos. */
+  villageLayout?: boolean;
 }) {
   const perms = useMemo(() => allPerms(n), [n]);
-  const arrangedPerms = useMemo(() => villageOrder(perms, n), [perms, n]);
+  const arrangedPerms = useMemo(
+    () => (villageLayout ? villageOrder(perms, n) : perms),
+    [perms, n, villageLayout],
+  );
   const positions = useMemo(
-    () => new Map(arrangedPerms.map((p, i) => [key(p), pointFor(n, i)])),
-    [n, arrangedPerms],
+    () => new Map(arrangedPerms.map((p, i) => [key(p), pointFor(n, i, villageLayout)])),
+    [n, arrangedPerms, villageLayout],
   );
   const route = path.filter((p) => positions.has(key(p)));
   const visited = new Set(route.map(key));
@@ -409,7 +457,7 @@ export function TopDownTspMap({
     >
       <svg viewBox={`0 0 ${MAP_W} ${MAP_H}`} role="img" aria-label={`top-down map for n = ${n}`}>
         <TileField w={MAP_W} h={MAP_H} dense={n === 4} />
-        <VillageFields n={n} />
+        <VillageFields n={n} villageLayout={villageLayout} />
         {active && showLens &&
           perms
             .filter((p) => key(p) !== activeKey)
@@ -464,8 +512,8 @@ export function TopDownTspMap({
             <text x="267" y="31" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="12" fontWeight="700" fill="#fff176">
               traveler spawning here
             </text>
-            <path d="M 202 40 L 129 94" fill="none" stroke="#fff176" strokeWidth="3" />
-            <path d="M 129 94 L 139 91 L 134 101 Z" fill="#fff176" />
+            <path d="M 202 40 L 117 87" fill="none" stroke="#fff176" strokeWidth="3" />
+            <path d="M 117 87 L 127 85 L 122 95 Z" fill="#fff176" />
           </g>
         )}
         {route.length > 0 && <Player at={positions.get(activeKey)!} scale={n === 4 ? 0.72 : 1} />}

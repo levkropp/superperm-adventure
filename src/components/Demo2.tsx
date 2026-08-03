@@ -295,6 +295,10 @@ export function TourBuilder3() {
       <Note>
         Any ordering of the six permutations, chained with maximum overlap, is a valid
         superpermutation. So the only question left is <em>which ordering is cheapest</em>.
+        The permutations can be arranged into two groups of three that share a{" "}
+        <strong>rotation chain</strong> (which we will refer to as an <strong>arc</strong> later)
+        of cheap 1-cost moves. At the end of a rotation chain, only one of the three options in
+        the other group has a cost of 2; the rest have a cost of 3.
         Press “watch the optimal tour” to see the traveller walk it, or click towns on the
         map to build your own. Once a town is selected, the faint spokes are a <strong>cost
         lens</strong>: each spoke goes to one possible next town and carries the exact number of
@@ -337,6 +341,7 @@ export function TourBuilder3() {
           path={shownPath}
           title="n = 3 salesman quest"
           subtitle={`${shownPath.length}/6 towns · ${total || 0} characters`}
+          villageLayout
           onTownClick={manualClick}
           onEdgeSelected={(from, to) => setLastEdge({ from, to })}
         />
@@ -442,6 +447,7 @@ export function TourViewer4() {
           path={shownPath}
           title={isRandom ? "n = 4 random route" : "n = 4 optimal route"}
           subtitle={`${shownPath.length}/24 towns · ${total || 0} characters`}
+          villageLayout
         />
       </Wide>
 
