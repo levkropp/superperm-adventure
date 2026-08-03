@@ -400,8 +400,9 @@ function VillageFields({ n, villageLayout }: { n: 2 | 3 | 4; villageLayout: bool
 function ClanCoat({ clan, at }: { clan: Perm; at: Point }) {
   const orbitRadius = clan.length === 3 ? 14 : 12;
   const markerId = `clan-arrow-${key(clan)}`;
+  const direction = clan.length === 4 ? -1 : 1;
   const points = clan.map((_, i) => {
-    const angle = -Math.PI / 2 + (i * Math.PI * 2) / clan.length;
+    const angle = -Math.PI / 2 + (direction * i * Math.PI * 2) / clan.length;
     return { x: Math.cos(angle) * orbitRadius, y: Math.sin(angle) * orbitRadius };
   });
 
