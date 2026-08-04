@@ -71,11 +71,11 @@ export default function App() {
         </P>
 
         <Callout variant="story" title="Origin">
-          In September 2011 an anonymous user on 4chan asked how short a binge could be if you
-          wanted to watch the fourteen episodes of <em>The Melancholy of Haruhi Suzumiya</em> in
-          every possible order — and, in the same post, proved a lower bound for all{" "}
-          <TeX>n</TeX>. The argument sat unnoticed until 2018, when Houston, Pantone and Vatter
-          formalised it; the published version credits “Anonymous 4chan poster” as first author.
+          In September 2011, 4chan asked how short a binge could be if you wanted to watch the
+          fourteen episodes of <em>The Melancholy of Haruhi Suzumiya</em> in every possible order —
+          and, in the same thread, an anonymous poster proved a lower bound for all <TeX>n</TeX>.
+          The argument sat unnoticed until 2018, when Houston, Pantone and Vatter formalised it; the
+          published version credits “Anonymous 4chan poster” as first author.
         </Callout>
 
         <Wide>
@@ -579,7 +579,7 @@ export default function App() {
             </div>
             <ul className="ml-5 list-disc space-y-2">
               <li>
-                <strong>2 July 2026 — two independent AI-assisted proof efforts, on the same
+                <strong>28 July 2026 — two independent AI-assisted proof efforts, on the same
                 day.</strong> They appeared without knowledge of one another and independently
                 supported the 872 conclusion.
               </li>
@@ -646,11 +646,11 @@ export default function App() {
                 </a>{" "}
                 is Lean-4 machine-checked and completes Zach Hunter's 2019 draft, proving{" "}
                 <TeX>s(6)\ge869</TeX>, <TeX>s(7)\ge5888</TeX>, and{" "}
-                <TeX>s(8)\ge46103</TeX>. The 869 result appeared three days before the
-                simultaneous AI proof announcements.
+                <TeX>s(8)\ge46103</TeX>. The 869 result arrived on the same day as the
+                AI-assisted 872 announcements.
               </li>
               <li>
-                <strong>2 July 2026 — 872.</strong> The lower bound met the upper bound, and the
+                <strong>28 July 2026 — 872.</strong> The lower bound met the upper bound, and the
                 question closed.
               </li>
             </ul>
@@ -681,7 +681,7 @@ export default function App() {
                 vlad-ds/a6-872
               </a>{" "}
               is accepted. Thus the best summary is <TeX>5888\le s(7)\le5906</TeX>{" "}
-              unconditionally, or <TeX>5896\le s(7)\le5906</TeX> conditional on that exact
+              unconditionally, or <TeX>5896\le s(7)\le5906</TeX> conditional on that exact{" "}
               <TeX>n=6</TeX> certificate. The Haruhi number <TeX>s(14)</TeX> remains wide open.
             </P>
           </div>

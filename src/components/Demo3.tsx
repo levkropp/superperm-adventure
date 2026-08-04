@@ -1013,12 +1013,19 @@ const CASE_B_STAGES = [
      head: "One freedom left: the order of the clans",
     body: (
       <>
-        The only choice remaining is the order in which to visit the 120 clans, paying the
-        hop cost between consecutive ones. That is a small travelling-salesman puzzle. There are
-        exactly <strong>10,068</strong> possible tilings; relabelling the six symbols groups them
-        into <strong>29</strong> genuinely different ones. The chart below is a representative
-        simulation of the reported orbit-score range, not a fresh proof in this browser; the
-        reported cheapest ordering costs <strong>265</strong>.
+        <p>
+          The only choice remaining is the order in which to visit the 120 clans, paying the
+          hop cost between consecutive ones. That is a small travelling-salesman puzzle. There are
+          exactly <strong>10,068</strong> possible tilings; relabelling the six symbols groups them
+          into <strong>29</strong> genuinely different ones. The chart below is a representative
+          simulation of the reported orbit-score range, not a fresh proof in this browser; the
+          reported cheapest ordering costs <strong>265</strong>.
+        </p>
+        <p>
+          If orbits do not make a lot of sense, you can move straight to the final step. All you need
+          to understand is that if you check all the 10,068 ways to visit the 120 clans, no matter
+          what you do you are paying at least 265.
+        </p>
       </>
     ),
   },
