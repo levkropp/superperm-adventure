@@ -30,6 +30,7 @@ import {
 import { Btn, Callout, Note, P, Panel, PermText, PlayBar, Wide } from "./ui";
 import TeX, { V, VarKey } from "../lib/tex";
 import { DemoErrorBoundary } from "./DemoErrorBoundary";
+import { N5_CLAN_LABELS, N5_ORBITS, N5_SET_CANON, N5_SET_WHEELS } from "../lib/coverOrbitsN5";
 
 const STRUCT = buildLoopStructure(6);
 const REGION_WHEELS = loopWheelSets(STRUCT);
@@ -591,6 +592,9 @@ export function RegionCoverageDemo() {
           />
         </Wide>
       )}
+      <P>
+        You can think of the tiling board as looking down at all the clan islands from the perspective of the federation satellites.
+      </P>
     </Panel>
   );
 }
@@ -998,8 +1002,8 @@ const CASE_B_STAGES = [
         At <TeX>n = 6</TeX>, each clan belongs to {COVER.perWheel} possible federations. Case B opens
         exactly 24 federations × 5 clans = <strong>120 clan-seats</strong>, matching the world&apos;s
         120 clans. Therefore no two open federations can share a clan: every clan has exactly one
-        open gate <strong>(Finish your clans!)</strong>. That gate fixes the entry house, so the
-        traveller must lap all six houses in each clan before moving on. The forced cost is 120 clans
+        open gate. That gate fixes the entry house, so the
+        traveller must lap all six houses in each clan before moving on. Finish your clans! The forced cost is 120 clans
         × 5 cheap steps = <strong>600 characters locked in</strong>, before any hop between clans.
       </>
     ),
@@ -1030,6 +1034,206 @@ const CASE_B_STAGES = [
     ),
   },
 ];
+
+const RELABEL_COLORS = ["#c0344b", "#a3620f", "#1f7a5c", "#1f6fae", "#5b3fbf", "#9c3f99"];
+
+function randomMapping(n: number): number[] {
+  const out = Array.from({ length: n }, (_, i) => i + 1);
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+const N5_SET_INDEX = new Map(N5_SET_CANON.map((canon, id) => [canon, id]));
+
+function n5RegionOfClan(cover: number[]): number[] {
+  const region = new Array(24).fill(-1);
+  cover.forEach((setId, index) => N5_SET_WHEELS[setId].forEach((clanId) => (region[clanId] = index)));
+  return region;
+}
+
+function n5Relabel(cover: number[], mapping: number[]): number[] {
+  return cover
+    .map((setId) => {
+      const relabelled = N5_SET_CANON[setId]
+        .split("|")
+        .map((str) => str.split("").map(Number).map((symbol) => mapping[symbol - 1]).join(""))
+        .sort()
+        .join("|");
+      return N5_SET_INDEX.get(relabelled) ?? setId;
+    })
+    .sort((a, b) => a - b);
+}
+
+function N5Board({ cover, fading }: { cover: number[]; fading: boolean }) {
+  const region = n5RegionOfClan(cover);
+  const cols = 6;
+  const cellW = 52;
+  const cellH = 44;
+  const rows = 4;
+  const w = cols * cellW + 8;
+  const h = rows * cellH + 16;
+  return (
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      className="w-full transition-opacity duration-300"
+      style={{ opacity: fading ? 0.25 : 1 }}
+      role="img"
+      aria-label="n equals 5 tiling board, 24 clans coloured by federation"
+    >
+      <rect width={w} height={h} fill="#10231f" />
+      {N5_CLAN_LABELS.map((label, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const x = 4 + col * cellW;
+        const y = 8 + row * cellH;
+        const color = RELABEL_COLORS[region[i] % RELABEL_COLORS.length];
+        return (
+          <g key={i}>
+            <rect x={x} y={y} width={cellW - 4} height={cellH - 4} fill={color} stroke="#081b18" strokeWidth="1.5" />
+            <text
+              x={x + (cellW - 4) / 2}
+              y={y + (cellH - 4) / 2}
+              textAnchor="middle"
+              dy="4"
+              fontFamily="IBM Plex Mono, monospace"
+              fontSize="11"
+              fontWeight="700"
+              fill="#15201d"
+            >
+              {label}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function OrbitExplorer() {
+  const [orbitIndex, setOrbitIndex] = useState(0);
+  const [mapping, setMapping] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [seen, setSeen] = useState<Set<string>>(() => new Set([N5_ORBITS[0].rep.join(",")]));
+  const [relabels, setRelabels] = useState(0);
+  const [fading, setFading] = useState(false);
+  const orbit = N5_ORBITS[orbitIndex];
+  const cover = useMemo(
+    () => n5Relabel(N5_ORBITS[orbitIndex].rep, mapping),
+    [orbitIndex, mapping],
+  );
+
+  const chooseOrbit = (index: number) => {
+    setOrbitIndex(index);
+    setMapping([1, 2, 3, 4, 5]);
+    setSeen(new Set([N5_ORBITS[index].rep.join(",")]));
+    setRelabels(0);
+  };
+
+  const apply = (delta: number[]) => {
+    setFading(true);
+    window.setTimeout(() => {
+      const nextMapping = mapping.map((symbol) => delta[symbol - 1]);
+      const nextCover = n5Relabel(N5_ORBITS[orbitIndex].rep, nextMapping);
+      setMapping(nextMapping);
+      setRelabels((count) => count + 1);
+      setSeen((previous) => new Set(previous).add(nextCover.join(",")));
+      window.setTimeout(() => setFading(false), 140);
+    }, 300);
+  };
+
+  return (
+    <div className="border-3 border-ink bg-[#f1ecff] p-4 shadow-[3px_3px_0_#1d1e33]">
+      <div className="font-mono text-[12px] font-bold uppercase tracking-[0.12em] text-accent">
+        what is an orbit? · n = 5 tilings: 25 total, 2 orbits
+      </div>
+
+      <div className="mt-4 grid gap-6 lg:grid-cols-[3fr_2fr] lg:items-center">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 font-mono text-[12px] font-bold uppercase tracking-wider text-ink-soft">
+              orbit
+              <select
+                value={orbitIndex}
+                onChange={(event) => chooseOrbit(Number(event.target.value))}
+                className="border-2 border-ink bg-[#fffbe9] px-2 py-1 font-mono text-[13px] text-ink"
+              >
+                {N5_ORBITS.map((o, i) => (
+                  <option key={i} value={i}>
+                    size {o.size}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Btn variant="soft" onClick={() => apply([2, 1, 3, 4, 5])}>
+              swap 1 ↔ 2
+            </Btn>
+            <Btn variant="soft" onClick={() => apply([2, 3, 1, 4, 5])}>
+              cycle 1 → 2 → 3
+            </Btn>
+            <Btn variant="soft" onClick={() => apply(randomMapping(5))}>
+              shuffle the symbols
+            </Btn>
+            <Btn variant="soft" onClick={() => chooseOrbit(orbitIndex)}>
+              reset
+            </Btn>
+          </div>
+          <div className="mt-2 font-mono text-[12px] text-ink-soft">
+            {mapping.map((symbol, i) => `${i + 1} → ${symbol}`).join(" · ")}
+          </div>
+
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <div className="border-2 border-ink bg-[#fffbe9] px-3 py-2">
+              <div className="font-mono text-[10px] font-bold uppercase tracking-wider text-ink-soft">orbit size</div>
+              <div className="font-mono text-xl font-bold">{orbit.size}</div>
+              <div className="font-mono text-[11px] text-ink-soft">tilings it contains</div>
+            </div>
+            <div className="border-2 border-ink bg-[#fffbe9] px-3 py-2">
+              <div className="font-mono text-[10px] font-bold uppercase tracking-wider text-ink-soft">distinct boards seen</div>
+              <div className="font-mono text-xl font-bold">{seen.size}</div>
+              <div className="font-mono text-[11px] text-ink-soft">after {relabels} relabellings</div>
+            </div>
+            <div className="border-2 border-ink bg-[#fff2cd] px-3 py-2">
+              <div className="font-mono text-[10px] font-bold uppercase tracking-wider text-ink-soft">rule</div>
+              <div className="font-mono text-[13px] leading-tight">
+                relabelling never leaves the orbit
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <N5Board cover={cover} fading={fading} />
+          </div>
+        </div>
+
+        <div className="min-w-0 space-y-4">
+          <p className="text-[15px] leading-relaxed text-ink">
+            A tiling of n = 5 picks 6 of the 30 two-loop regions so that every one of the 24 clans
+            is covered exactly once. There are exactly <strong>25</strong> such tilings. Renaming
+            the five symbols — swap <strong>1 ↔ 2</strong>, say — turns one tiling into another. Two
+            tilings belong to the same <strong>orbit</strong> when some renaming of the symbols
+            turns one into the other.
+          </p>
+
+          <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-[12px] text-ink-soft">
+            {N5_ORBITS.map((o, i) => (
+              <span key={i}>orbit of size {o.size}</span>
+            ))}
+            <span>5 + 20 = 25 tilings</span>
+          </div>
+
+          <p className="font-mono text-[13px] leading-relaxed text-ink-soft">
+            Each relabelling re-colours the 24 clans a different way, but it can only reach tilings
+            inside the current orbit — shuffle the size-5 orbit and you will never find more than 5
+            boards. The same idea at n = 6 turns all 10,068 tilings into the 29 orbits the proof
+            below depends on.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function ExactCoverDemo() {
   const [stage, setStage] = useState(0);
@@ -1062,6 +1266,7 @@ export function ExactCoverDemo() {
 
   // Region-by-region reveal used by stage 4 onwards.
   const laying = useStepper(24, { speed: 260 });
+  const mapRef = useRef<HTMLDivElement>(null);
 
   const s = CASE_B_STAGES[stage];
   const collisionStage = stage === 2;
@@ -1131,27 +1336,7 @@ export function ExactCoverDemo() {
           <div className="mt-2 leading-relaxed text-ink">{s.body}</div>
         </div>
 
-        {/* Step 1 gets a pure counting panel rather than the board. */}
-        {stage === 0 && (
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              ["1 federation", "30 houses", "= 5 clans"],
-              ["24 federations", "720 houses", "= 120 clans"],
-              ["the world", "720 houses", "= 120 clans"],
-            ].map(([a, b, c], i) => (
-              <div
-                key={a}
-                className={`border-3 border-ink px-4 py-3 shadow-[3px_3px_0_#1d1e33] ${
-                  i === 2 ? "bg-[#fff2cd]" : "bg-[#fffbe9]"
-                }`}
-              >
-                <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-ink-soft">{a}</div>
-                <div className="font-mono text-xl font-bold">{b}</div>
-                <div className="font-mono text-[13px] text-ink-soft">{c}</div>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Step 1 relies on the step narrative rather than the board. */}
 
         {stage >= 1 && (
           <>
@@ -1169,11 +1354,13 @@ export function ExactCoverDemo() {
                 onSkip={laying.skipToEnd}
                 speed={laying.speed}
                 onSpeed={laying.setSpeed}
-                playLabel="lay the tiles"
+                scrollTarget={mapRef}
+                playLabel={view === "archipelago" ? "lay the satellites" : "lay the tiles"}
                 label={`${laying.step}/24 federations placed`}
               />
             )}
-              {stage <= 3 && (view === "board" ? (
+              <div ref={mapRef}>
+              {stage >= 2 && stage <= 3 && (view === "board" ? (
                 <Wide>
                   <ExactCoverTilingMap
                     cells={collisionStage ? collisionCells : COVER.cells}
@@ -1188,7 +1375,7 @@ export function ExactCoverDemo() {
                   <FederationOverworldMap
                     clans={STRUCT.wheels}
                     regions={REGION_WHEELS}
-                    federationIds={collisionStage ? COVER.chosen : COVER.chosen.slice(0, Math.max(1, revealed))}
+                    federationIds={collisionStage ? COVER.chosen : COVER.chosen.slice(0, Math.max(0, revealed))}
                     collision={collisionStage ? collisionMarks : null}
                     selectedClanKey={key(STRUCT.wheels[0][0])}
                     title={collisionStage ? "Federation overlap archipelago" : "Federation tiling archipelago"}
@@ -1196,6 +1383,7 @@ export function ExactCoverDemo() {
                   />
                 </Wide>
               ))}
+              </div>
           </>
         )}
 
@@ -1227,6 +1415,7 @@ export function ExactCoverDemo() {
 
         {stage === 5 && (
           <div className="space-y-3">
+            <OrbitExplorer />
             <div className="overflow-x-auto border-3 border-ink bg-[#f3ead0] p-4 shadow-[3px_3px_0_#1d1e33]">
               <div className="mb-1 font-mono text-[12px] font-bold uppercase tracking-wider text-ink-soft">
                 Representative 29-orbit chart · simulation data

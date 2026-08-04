@@ -410,29 +410,6 @@ export default function App() {
           </DemoErrorBoundary>
         </Wide>
 
-        <details className="border-4 border-ink bg-[#f1ecff] shadow-[5px_5px_0_#5b3fbf]">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 font-mono text-[13px] font-bold uppercase tracking-[0.12em] text-accent">
-            <span>▸ show — why the HPV inequality is true</span>
-            <span className="text-[11px]">proof sketch</span>
-          </summary>
-          <div className="border-t-2 border-accent/25 px-5 py-5">
-            <P>
-              The formal HPV proof is a careful charging argument. This is the intuition behind it,
-              not a replacement for the published derivation. A walk through <TeX>p</TeX>{" "}houses has{" "}
-              <TeX>p-1</TeX>{" "}moves, so <TeX>p-1</TeX> is the baseline cost when every move is as cheap
-              as possible.
-            </P>
-            <P>
-              The bookkeeping then marks two kinds of events that force additional cost: completing
-              clans and entering new federations. Once the walk is divided into arcs and those events
-              are charged without counting any move twice, the formal accounting assigns <TeX>c</TeX>{" "}
-              extra units to completed clans and <TeX>v-1</TeX>{" "}extra units to federation entries.
-              Only the two ends of the walk escape those charges.
-            </P>
-            <TeX block>{"w \\;\\ge\\; (p-1) + c + (v-1) \\;=\\; p+c+v-2"}</TeX>
-          </div>
-        </details>
-
         {/* Lemma 4: HPV Inequality */}
         <Callout variant="proof" title="Lemma 4 · the HPV inequality">
           Houston, Pantone and Vatter package the count into a single inequality:
@@ -440,6 +417,42 @@ export default function App() {
           With <V n="p">p</V> = 720, <V n="c">c</V> ≥ 119 and <V n="v">v</V> ≥ 24 this gives{" "}
           <V n="w">w</V> ≥ 861, hence <TeX>L \ge 6 + 861 = 867</TeX>.
         </Callout>
+
+        <details className="border-4 border-ink bg-[#f1ecff] shadow-[5px_5px_0_#5b3fbf]">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 font-mono text-[13px] font-bold uppercase tracking-[0.12em] text-accent">
+            <span>▸ show — why the HPV inequality is true</span>
+            <span className="text-[11px]">proof sketch</span>
+          </summary>
+          <div className="border-t-2 border-accent/25 px-5 py-5">
+            <P>
+              The formal proof is best thought of as a budget. Walk through the string one move at a
+              time and watch three counters: <TeX>p</TeX>, the houses seen so far; <TeX>c</TeX>, the
+              clans fully lapped in one run; <TeX>v</TeX>, the federations entered. The claim is that
+              every move advances <TeX>p + c + v</TeX> by no more than the characters that move cost.
+              Summed over the walk, that is exactly <TeX>w \ge p + c + v - 2</TeX>.
+            </P>
+            <P>
+              A rotation costs one character. It can reveal at most one new house, and it can never
+              finish a clan or enter a federation — cheap moves stay inside the clan&apos;s ring. So a
+              cost-1 move advances the counters by at most one: it pays for itself exactly.
+            </P>
+            <P>
+              A kick costs two characters, and it can buy two things at once: one new house, and
+              either a completed clan or a fresh federation entry. It can never buy both at once. The
+              reason is structural: if a kick both reveals a new house and completes its clan, the
+              federation it lands you in was already entered by an earlier jump, so <TeX>v</TeX> does
+              not rise. Two characters, two events, a fair trade.
+            </P>
+            <P>
+              A jump costing three or more can reveal a house, complete a clan, and enter a
+              federation all in one move — three events — and it pays at least three characters, so it
+              still balances. The only correction is where the string starts: the first house is
+              counted once toward <TeX>p</TeX> and once toward <TeX>v</TeX> while charging nothing.
+              Those two free credits are why we subtract <TeX>2</TeX> at the end.
+            </P>
+            <TeX block>{"w \\;\\ge\\; (p-1) + c + (v-1) \\;=\\; p+c+v-2"}</TeX>
+          </div>
+        </details>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <VarKey n="p" value="720" note="houses that must be visited" />

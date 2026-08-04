@@ -1060,7 +1060,12 @@ export function FederationOverworldMap({
           {clanPoints.map((point, clanId) => {
             const active = activeClans.has(clanId);
             const selected = selectedFederation === null && clanId === selectedClan;
-            const color = selectedFederation === null ? "#65c5a2" : federationColor(selectedFederation);
+            const exactCoverFederation = federationIds !== undefined && !collision ? viewMemberships[clanId]?.[0] : undefined;
+            const color = exactCoverFederation !== undefined
+              ? federationColor(exactCoverFederation)
+              : selectedFederation === null
+                ? "#65c5a2"
+                : federationColor(selectedFederation);
             const stranded = collision?.stranded === clanId;
             const doubleBooked = collision?.doubleBooked === clanId;
             const collisionColor = doubleBooked
