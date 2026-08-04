@@ -400,7 +400,7 @@ function VillageFields({ n, villageLayout }: { n: 2 | 3 | 4; villageLayout: bool
 export function ClanCoat({ clan, at, showLabel = true, scale = 0.82 }: { clan: Perm; at: Point; showLabel?: boolean; scale?: number }) {
   const orbitRadius = clan.length === 3 ? 14 : clan.length === 4 ? 12 : 16;
   const markerId = `clan-arrow-${key(clan)}`;
-  const direction = clan.length === 4 ? -1 : 1;
+  const direction = 1;
   const points = clan.map((_, i) => {
     const angle = -Math.PI / 2 + (direction * i * Math.PI * 2) / clan.length;
     return { x: Math.cos(angle) * orbitRadius, y: Math.sin(angle) * orbitRadius };
@@ -1479,7 +1479,6 @@ export function KickVillageMap({ from, to, crossed = false }: { from: Perm; to: 
 
   const p1 = points1[idx1 >= 0 ? idx1 : 0];
   const p2 = points2[idx2 >= 0 ? idx2 : 0];
-  const costThreeTargets = village2.filter((permutation) => weight(from, permutation) === 3);
 
   return (
     <MapFrame
@@ -1514,27 +1513,14 @@ export function KickVillageMap({ from, to, crossed = false }: { from: Perm; to: 
           <Road key={`b${i}`} from={p} to={points2[(i + 1) % 6]} cost={1} size="sm" />
         ))}
 
-        {/* Before crossing, expose every cost-3 alternative in the other clan. */}
-        {!crossed && costThreeTargets.map((permutation) => {
+        {/* Before crossing, expose every possible path into the other clan. */}
+        {!crossed && village2.map((permutation) => {
           const targetIndex = village2.findIndex((candidate) => key(candidate) === key(permutation));
-          return <Road key={`cost-three-${key(permutation)}`} from={p1} to={points2[targetIndex]} cost={3} size="sm" />;
+          return <Road key={`alternative-${key(permutation)}`} from={p1} to={points2[targetIndex]} cost={weight(from, permutation)} size="sm" faded />;
         })}
 
-        {/* The Kick Bridge (Cost 2): only visible once the traveller pays it */}
-        {crossed ? (
-          <Road from={p1} to={p2} cost={2} active />
-        ) : (
-          <line
-            x1={p1.x}
-            y1={p1.y}
-            x2={p2.x}
-            y2={p2.y}
-            stroke="#a77a52"
-            strokeWidth="3"
-            strokeDasharray="3 6"
-            opacity="0.35"
-          />
-        )}
+        {/* The Kick Bridge (Cost 2): faded before payment, active after crossing. */}
+        {crossed && <Road from={p1} to={p2} cost={2} active />}
 
         {/* Houses */}
         {village1.map((p, i) => (

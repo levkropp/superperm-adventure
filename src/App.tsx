@@ -190,10 +190,9 @@ export default function App() {
 
         <P>
           If federations are a little confusing, all you really need to understand is that you can
-          move between clans in a federation more cheaply than between clans in different
-          federations. So, if you are trying to visit every house in every clan as quickly as
-          possible, you need to take as much advantage as possible of spending less time at
-          “passport control.”
+          move between clans that belong to the same federation more cheaply than between clans in
+          different federations. Eventually, you will have to pay to move to a different federation
+          though if you want to visit every clan — and we do.
         </P>
 
         <P>
@@ -235,9 +234,8 @@ export default function App() {
         lead={null}
       >
         <P>
-          We will now build the famous 4chan proof step by step. This section will also review all
-          the concepts you have already seen at <TeX>n = 4</TeX>, but this time at <TeX>n = 6</TeX>,
-          to make sure everything is still intuitive.
+          This section will review all the concepts you have already seen at <TeX>n = 4</TeX>, but
+          this time at <TeX>n = 6</TeX>, to make sure everything is still intuitive.
         </P>
 
         <P>
