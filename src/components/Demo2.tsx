@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   HOUSTON_872,
   allPerms,
@@ -16,6 +16,12 @@ import { OverlapRoadMap, PermWorldMap, TopDownTspMap } from "./PixelMaps";
 import { Btn, Note, Panel, PermChip, PermText, PlayBar, Str, Wide } from "./ui";
 import { CostLensLegend } from "./CostLens";
 import { FederationMainDemo4 } from "./RegionLab";
+
+function scrollDemoMap(ref: React.RefObject<HTMLElement | null>) {
+  if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) {
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /*  Demo 4 · the sliding overlap: where does "cost" come from?         */
@@ -260,6 +266,7 @@ const OPTIMAL_3: number[][] = [
 export function TourBuilder3() {
   const [path, setPath] = useState<number[][]>([]);
   const [auto, setAuto] = useState<number[][] | null>(null);
+  const tourMapRef = useRef<HTMLDivElement>(null);
 
   const player = useStepper(auto ? auto.length : 0, { speed: 750 });
   const shownPath = auto ? auto.slice(0, player.step) : path;
@@ -274,6 +281,7 @@ export function TourBuilder3() {
     setPath([]);
     player.reset();
     setTimeout(player.play, 30);
+    scrollDemoMap(tourMapRef);
   };
 
   const manualClick = (p: number[]) => {
@@ -317,23 +325,26 @@ export function TourBuilder3() {
           onToggle={player.toggle}
           onReset={player.reset}
           onSkip={player.skipToEnd}
-          speed={player.speed}
-          onSpeed={player.setSpeed}
-          playLabel="resume"
+           speed={player.speed}
+           onSpeed={player.setSpeed}
+           scrollTarget={tourMapRef}
+           playLabel="resume"
           label={`town ${player.step}/${auto.length}`}
         />
       )}
 
-      <Wide>
-        <TopDownTspMap
-          n={3}
-          path={shownPath}
-          title="n = 3 salesman quest"
-          subtitle={`${shownPath.length}/6 towns · ${total || 0} characters`}
-          villageLayout
-          onTownClick={manualClick}
-        />
-      </Wide>
+      <div ref={tourMapRef}>
+        <Wide>
+          <TopDownTspMap
+            n={3}
+            path={shownPath}
+            title="n = 3 salesman quest"
+            subtitle={`${shownPath.length}/6 towns · ${total || 0} characters`}
+            villageLayout
+            onTownClick={manualClick}
+          />
+        </Wide>
+      </div>
 
       <CostLensLegend />
 
@@ -386,9 +397,11 @@ const OPT4 = stringToPath(standardSuperperm(4), 4);
 export function TourViewer4() {
   const [order, setOrder] = useState<number[][]>(OPT4);
   const [isRandom, setIsRandom] = useState(false);
+  const [manual, setManual] = useState(false);
+  const tourMapRef = useRef<HTMLDivElement>(null);
   const player = useStepper(order.length, { speed: 260 });
 
-  const shownPath = order.slice(0, player.step);
+  const shownPath = manual ? order : order.slice(0, player.step);
   const s = pathToString(shownPath);
   const total = shownPath.length ? 4 + shownPath.slice(1).reduce((acc, p, i) => acc + weight(shownPath[i], p), 0) : 0;
   const finalTotal = 4 + order.slice(1).reduce((acc, p, i) => acc + weight(order[i], p), 0);
@@ -396,8 +409,15 @@ export function TourViewer4() {
   const load = (tour: number[][], random: boolean) => {
     setOrder(tour);
     setIsRandom(random);
+    setManual(false);
     player.reset();
     setTimeout(player.play, 30);
+    scrollDemoMap(tourMapRef);
+  };
+
+  const addTown = (town: number[]) => {
+    if (!manual) return;
+    setOrder((old) => (old.some((existing) => key(existing) === key(town)) ? old : [...old, town]));
   };
 
   return (
@@ -416,27 +436,45 @@ export function TourViewer4() {
         <Btn variant="soft" onClick={() => load(randomTour(4), true)}>
           watch a random route
         </Btn>
+        <Btn
+          variant="soft"
+          onClick={() => {
+            setManual(true);
+            setOrder([]);
+            setIsRandom(false);
+            player.reset();
+            scrollDemoMap(tourMapRef);
+          }}
+        >
+          clear and build my own
+        </Btn>
       </div>
 
-      <PlayBar
-        playing={player.playing}
-        onToggle={player.toggle}
-        onReset={player.reset}
-        onSkip={player.skipToEnd}
-        speed={player.speed}
-        onSpeed={player.setSpeed}
-        label={`town ${player.step}/${order.length} · ${total || 0} characters`}
-      />
-
-      <Wide>
-        <TopDownTspMap
-          n={4}
-          path={shownPath}
-          title={isRandom ? "n = 4 random route" : "n = 4 optimal route"}
-          subtitle={`${shownPath.length}/24 towns · ${total || 0} characters`}
-          villageLayout
+      {!manual && (
+        <PlayBar
+          playing={player.playing}
+          onToggle={player.toggle}
+          onReset={player.reset}
+          onSkip={player.skipToEnd}
+          speed={player.speed}
+          onSpeed={player.setSpeed}
+          scrollTarget={tourMapRef}
+          label={`town ${player.step}/${order.length} · ${total || 0} characters`}
         />
-      </Wide>
+      )}
+
+      <div ref={tourMapRef}>
+        <Wide>
+          <TopDownTspMap
+            n={4}
+            path={shownPath}
+            title={manual ? "n = 4 custom route" : isRandom ? "n = 4 random route" : "n = 4 optimal route"}
+            subtitle={`${shownPath.length}/24 towns · ${total || 0} characters`}
+            villageLayout
+            onTownClick={manual ? addTown : undefined}
+          />
+        </Wide>
+      </div>
 
       <CostLensLegend />
 
@@ -448,10 +486,14 @@ export function TourViewer4() {
         <span className="text-ink-soft">
           running total <strong className="text-2xl text-ink">{total || "—"}</strong>
         </span>
-        <span className={isRandom ? "text-ember" : "text-emerald-700"}>
-          this route finishes at {finalTotal} characters
-          {isRandom && ` — ${finalTotal - 33} more than optimal`}
-        </span>
+        {manual ? (
+          <span className="text-accent">click towns to assemble a custom route</span>
+        ) : (
+          <span className={isRandom ? "text-ember" : "text-emerald-700"}>
+            this route finishes at {finalTotal} characters
+            {isRandom && ` — ${finalTotal - 33} more than optimal`}
+          </span>
+        )}
       </div>
     </Panel>
   );

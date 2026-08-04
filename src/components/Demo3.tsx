@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   HOUSTON_872,
   buildLoopStructure,
@@ -335,7 +335,6 @@ export function KickNecessityDemo() {
 
 export function FederationGateDemo() {
   const [open, setOpen] = useState(false);
-  const gates = [...STRUCT.gensOfLoop[0]].sort();
 
   return (
     <div>
@@ -360,16 +359,6 @@ export function FederationGateDemo() {
             gate. The other 25 houses are reached by rotations after entry; they are not outside
             entrances.
           </Note>
-          <div className="grid gap-2 sm:grid-cols-5">
-            {gates.map((gate) => (
-              <div key={gate} className="border-3 border-gold bg-[#fff2cd] px-2 py-2 text-center font-mono text-[13px] font-bold shadow-[2px_2px_0_#b26a12]">
-                {gate}
-              </div>
-            ))}
-          </div>
-          <div className="border-4 border-gold bg-[#fff2cd] px-4 py-3 font-mono text-[14px]">
-            5 clans × 1 generator each = <strong>5 federation gates</strong>.
-          </div>
         </Panel>
       )}
     </div>
@@ -403,9 +392,14 @@ export function LoopExplorer() {
   const [zoom, setZoom] = useState<"local" | "world">("local");
   const walk = useMemo(() => twoloopWalk(start), [start]);
   const player = useStepper(walk.length, { speed: 190 });
+  const localMapRef = useRef<HTMLDivElement>(null);
 
   const loopId = STRUCT.genOf.get(key(start)) ?? 0;
   const gens = STRUCT.gensOfLoop[loopId];
+  const handlePlaybackToggle = () => {
+    if (!player.playing) setZoom("local");
+    player.toggle();
+  };
   return (
     <DemoErrorBoundary title="2-Loop Explorer Error">
       <Panel label="Demo 11 · review: 2-loop federation at n = 6 (30 houses in 5 clans)" className="space-y-4">
@@ -451,24 +445,27 @@ export function LoopExplorer() {
 
         <PlayBar
           playing={player.playing}
-          onToggle={player.toggle}
+          onToggle={handlePlaybackToggle}
           onReset={player.reset}
           onSkip={player.skipToEnd}
           speed={player.speed}
           onSpeed={player.setSpeed}
+          scrollTarget={localMapRef}
           label={`house ${player.step}/${walk.length}`}
         />
 
-        <Wide>
-          <LoopRegionMap
-            walk={walk}
-            shown={player.step}
-            generators={gens}
-            zoom={zoom}
-            clans={STRUCT.wheels}
-            regions={REGION_WHEELS}
-          />
-        </Wide>
+        <div ref={localMapRef}>
+          <Wide>
+            <LoopRegionMap
+              walk={walk}
+              shown={player.step}
+              generators={gens}
+              zoom={zoom}
+              clans={STRUCT.wheels}
+              regions={REGION_WHEELS}
+            />
+          </Wide>
+        </div>
 
         <div className="border-4 border-gold bg-[#fff2cd] px-4 py-3 shadow-[5px_5px_0_#b26a12]">
           Every 2-loop federation has exactly <strong>5 generator gates</strong> (orange roofs). A traveller
@@ -1195,6 +1192,7 @@ export function ExactCoverDemo() {
                     collision={collisionStage ? collisionMarks : null}
                     selectedClanKey={key(STRUCT.wheels[0][0])}
                     title={collisionStage ? "Federation overlap archipelago" : "Federation tiling archipelago"}
+                    focusOnSelection={false}
                   />
                 </Wide>
               ))}

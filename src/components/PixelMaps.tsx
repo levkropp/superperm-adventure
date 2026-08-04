@@ -922,6 +922,10 @@ export function FederationOverworldMap({
   focusOnSelection?: boolean;
 }) {
   const visibleFederationIds = federationIds ?? regions.map((_, regionId) => regionId);
+  const federationColor = (regionId: number) => {
+    const visibleIndex = visibleFederationIds.indexOf(regionId);
+    return REGION_COLORS[(visibleIndex >= 0 ? visibleIndex : regionId) % REGION_COLORS.length];
+  };
   const clanPoints = useMemo(
     () => clans.map((_, index) => federationOverworldPoint(index, 12, 505, 95, 24, 25, 7)),
     [clans],
@@ -930,11 +934,6 @@ export function FederationOverworldMap({
     () => visibleFederationIds.map((_, index) => federationOverworldPoint(index, visibleFederationIds.length <= 24 ? 8 : 12, 74, visibleFederationIds.length <= 24 ? 150 : 95, visibleFederationIds.length <= 24 ? 82 : 31, visibleFederationIds.length <= 24 ? 26 : 28, visibleFederationIds.length <= 24 ? 12 : 9)),
     [visibleFederationIds],
   );
-  const memberships = useMemo(() => {
-    const result = Array.from({ length: clans.length }, () => [] as number[]);
-    regions.forEach((memberIds, regionId) => memberIds.forEach((clanId) => result[clanId]?.push(regionId)));
-    return result;
-  }, [clans.length, regions]);
   const selectedFromKey = useMemo(
     () => Math.max(0, clans.findIndex((clan) => clan.some((permutation) => key(permutation) === selectedClanKey))),
     [clans, selectedClanKey],
@@ -942,21 +941,43 @@ export function FederationOverworldMap({
   const [selectedClan, setSelectedClan] = useState<number | null>(focusOnSelection ? selectedFromKey : null);
   const [selectedFederation, setSelectedFederation] = useState<number | null>(null);
   const [view, setView] = useState({ x: 0, y: 0, w: FEDERATION_OVERWORLD_W, h: FEDERATION_OVERWORLD_H });
+  const [collisionPulse, setCollisionPulse] = useState(false);
+  const federationMembers = (regionId: number) => {
+    const baseMemberIds = regions[regionId] ?? [];
+    if (!collision) return baseMemberIds;
+    const coverIndex = visibleFederationIds.indexOf(regionId);
+    return baseMemberIds
+      .filter((clanId) => !(coverIndex === 1 && clanId === collision.stranded))
+      .concat(coverIndex === 0 ? [collision.doubleBooked] : []);
+  };
+  const viewMemberships = useMemo(() => {
+    const result = Array.from({ length: clans.length }, () => [] as number[]);
+    visibleFederationIds.forEach((regionId) => {
+      federationMembers(regionId).forEach((clanId) => result[clanId]?.push(regionId));
+    });
+    return result;
+  }, [clans.length, visibleFederationIds, regions, collision]);
 
   useEffect(() => {
     setSelectedClan(focusOnSelection ? selectedFromKey : null);
     setSelectedFederation(null);
   }, [selectedFromKey, focusOnSelection]);
 
+  useEffect(() => {
+    if (!collision) return;
+    const timer = window.setInterval(() => setCollisionPulse((value) => !value), 520);
+    return () => window.clearInterval(timer);
+  }, [collision]);
+
   const hasFocus = selectedClan !== null || selectedFederation !== null;
   const showAllConnections = !hasFocus;
   const activeFederations = showAllConnections
     ? visibleFederationIds
     : selectedFederation === null
-      ? memberships[selectedClan ?? 0] ?? []
+      ? viewMemberships[selectedClan ?? 0] ?? []
       : [selectedFederation];
   const activeFederationSet = new Set(activeFederations);
-  const activeClans = new Set(showAllConnections ? clans.map((_, clanId) => clanId) : selectedFederation === null ? [selectedClan ?? 0] : regions[selectedFederation] ?? []);
+  const activeClans = new Set(showAllConnections ? clans.map((_, clanId) => clanId) : selectedFederation === null ? [selectedClan ?? 0] : federationMembers(selectedFederation));
   const selectedLabel = selectedClan === null ? "all clans" : key(clans[selectedClan]?.[0] ?? []);
   const selectedFederationLabel = selectedFederation === null ? null : `F${selectedFederation + 1}`;
   const showDetailedGlyphs = view.w < 760;
@@ -1000,13 +1021,9 @@ export function FederationOverworldMap({
           <text x="34" y="752" fontFamily="IBM Plex Mono, monospace" fontSize="11" fontWeight="700" fill="#a3d9b1">120 clan islands</text>
 
           {visibleFederationIds.map((regionId, visibleIndex) => {
-            const baseMemberIds = regions[regionId] ?? [];
-            const coverIndex = visibleFederationIds.indexOf(regionId);
-            const memberIds = collision
-              ? baseMemberIds.filter((clanId) => !(coverIndex === 1 && clanId === collision.stranded)).concat(coverIndex === 0 ? [collision.doubleBooked] : [])
-              : baseMemberIds;
+            const memberIds = federationMembers(regionId);
             const active = activeFederationSet.has(regionId);
-            const color = REGION_COLORS[regionId % REGION_COLORS.length];
+            const color = federationColor(regionId);
             return memberIds.map((clanId) => (
               <line
                 key={`${regionId}-${clanId}`}
@@ -1026,7 +1043,7 @@ export function FederationOverworldMap({
             const point = satellitePoints[visibleIndex];
             const active = activeFederationSet.has(regionId);
             const selected = selectedFederation === regionId;
-            const color = REGION_COLORS[regionId % REGION_COLORS.length];
+            const color = federationColor(regionId);
             return (
               showDetailedGlyphs ? (
                 <FederationSatelliteGraphic key={regionId} point={point} regionId={regionId} color={color} selected={selected} active={showAllConnections || active} onSelect={() => { setSelectedFederation(selected ? null : regionId); setSelectedClan(null); }} />
@@ -1043,13 +1060,18 @@ export function FederationOverworldMap({
           {clanPoints.map((point, clanId) => {
             const active = activeClans.has(clanId);
             const selected = selectedFederation === null && clanId === selectedClan;
-            const color = selectedFederation === null ? "#65c5a2" : REGION_COLORS[selectedFederation % REGION_COLORS.length];
+            const color = selectedFederation === null ? "#65c5a2" : federationColor(selectedFederation);
+            const stranded = collision?.stranded === clanId;
+            const doubleBooked = collision?.doubleBooked === clanId;
+            const collisionColor = doubleBooked
+              ? federationColor(visibleFederationIds[collisionPulse ? 1 : 0])
+              : color;
             return (
               <g key={clanId} onClick={() => { setSelectedClan(selected ? null : clanId); setSelectedFederation(null); }} className="cursor-pointer" opacity={active ? 1 : 0.5}>
-                <path d={`M ${point.x - 13} ${point.y + 5} L ${point.x - 9} ${point.y - 7} L ${point.x + 8} ${point.y - 9} L ${point.x + 14} ${point.y + 4} L ${point.x + 6} ${point.y + 9} L ${point.x - 8} ${point.y + 9} Z`} fill={selected ? "#fff176" : active ? color : "#2b634c"} stroke={selected ? "#fff176" : active ? color : "#0b1c1c"} strokeWidth={selected ? 3 : 1.5} />
+                <path d={`M ${point.x - 13} ${point.y + 5} L ${point.x - 9} ${point.y - 7} L ${point.x + 8} ${point.y - 9} L ${point.x + 14} ${point.y + 4} L ${point.x + 6} ${point.y + 9} L ${point.x - 8} ${point.y + 9} Z`} fill={stranded ? "transparent" : selected ? "#fff176" : active ? collisionColor : "#2b634c"} stroke={stranded ? "#ff6b6b" : selected ? "#fff176" : active ? collisionColor : "#0b1c1c"} strokeWidth={stranded || selected || doubleBooked ? 3 : 1.5} />
                 <circle cx={point.x} cy={point.y} r="14" fill="transparent" stroke="transparent" />
                 {showDetailedGlyphs && <ClanCoat clan={clans[clanId]?.[0] ?? []} at={{ x: point.x, y: point.y - 16 }} showLabel={false} scale={0.28} />}
-                {(selected || (active && showDetailedGlyphs)) && <text x={point.x} y={point.y - 31} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="8" fontWeight="700" fill={selected ? "#fff176" : color}>{key(clans[clanId]?.[0] ?? [])}</text>}
+                {(stranded || selected || (active && showDetailedGlyphs)) && <text x={point.x} y={point.y - 31} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="8" fontWeight="700" fill={stranded ? "#ff8f8f" : selected ? "#fff176" : collisionColor}>{stranded ? "NO FEDERATION" : key(clans[clanId]?.[0] ?? [])}</text>}
               </g>
             );
           })}

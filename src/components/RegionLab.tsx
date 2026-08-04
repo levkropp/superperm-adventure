@@ -120,6 +120,7 @@ type FederationVisualProps = {
   selectedRegion: number | null;
   activeRegionIds: number[];
   onSelectRegion: (id: number) => void;
+  onSelectClan?: (id: number) => void;
 };
 
 const CLAN_COLORS = ["#f4d35e", "#65c5a2", "#4fb3c9", "#d879b5", "#7d6fd6", "#a9c94f"];
@@ -363,13 +364,13 @@ function FederationMoons({ model, selected, selectedRegion, activeRegionIds, onS
   );
 }
 
-export function FederationArchipelago({ model, selected, selectedRegion, activeRegionIds, onSelectRegion }: FederationVisualProps) {
+export function FederationArchipelago({ model, selected, selectedRegion, activeRegionIds, onSelectRegion, onSelectClan }: FederationVisualProps) {
   return (
     <VisualCard title="Federation archipelago" description="satellites beam to the three islands they govern">
       <svg viewBox="0 0 900 500" className="w-full border-2 border-[#315342]" role="img" aria-label="archipelago of clans connected to federation satellites">
         <rect width="900" height="500" fill="#10231f" />
         <path d="M 24 245 C 180 215 300 270 450 242 S 720 210 876 250 L 876 470 L 24 470 Z" fill="#16382d" stroke="#315342" strokeWidth="2" />
-        <text x="24" y="28" fontFamily="IBM Plex Mono, monospace" fontSize="12" fontWeight="700" fill="#fff4cb">six clan islands · eight federation satellites</text>
+        <text x="24" y="28" fontFamily="IBM Plex Mono, monospace" fontSize="12" fontWeight="700" fill="#fff4cb">eight federation satellites</text>
         {model.regions.map((memberIds, regionId) => {
           const active = activeRegionIds.includes(regionId);
           const color = REGION_COLORS[regionId % REGION_COLORS.length];
@@ -380,7 +381,7 @@ export function FederationArchipelago({ model, selected, selectedRegion, activeR
         {ARCHIPELAGO_CLANS.map((point, clanId) => {
           const active = isClanHighlighted(model, clanId, selected, selectedRegion);
           return (
-            <g key={clanId} opacity={active ? 1 : 0.3}>
+            <g key={clanId} onClick={() => onSelectClan?.(clanId)} className={onSelectClan ? "cursor-pointer" : undefined} opacity={active ? 1 : 0.3}>
               <path d={`M ${point.x - 48} ${point.y + 15} L ${point.x - 34} ${point.y - 24} L ${point.x - 7} ${point.y - 35} L ${point.x + 37} ${point.y - 22} L ${point.x + 52} ${point.y + 10} L ${point.x + 27} ${point.y + 31} L ${point.x - 22} ${point.y + 33} Z`} fill={CLAN_COLORS[clanId]} stroke={selectedRegion === null && clanId === selected ? "#fff176" : "#10231f"} strokeWidth={selectedRegion === null && clanId === selected ? 4 : 2} />
               <text x={point.x} y={point.y + 4} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="11" fontWeight="700" fill="#1d1e33">{clanLabel(model.clans, clanId)}</text>
             </g>
@@ -393,14 +394,14 @@ export function FederationArchipelago({ model, selected, selectedRegion, activeR
           const inspected = selectedRegion === regionId;
           return (
             <g key={regionId} onClick={() => onSelectRegion(regionId)} className="cursor-pointer" opacity={active ? 1 : 0.2}>
-              <path d={`M ${point.x - 19} ${point.y + 13} L ${point.x + 19} ${point.y + 13} L ${point.x + 13} ${point.y - 5} L ${point.x - 13} ${point.y - 5} Z`} fill={inspected ? "#fff176" : color} stroke={inspected ? "#fff176" : color} strokeWidth={inspected ? 3 : 1.5} />
+              <path d={`M ${point.x - 19} ${point.y + 13} L ${point.x + 19} ${point.y + 13} L ${point.x + 13} ${point.y - 5} L ${point.x - 13} ${point.y - 5} Z`} fill={color} stroke={inspected ? "#fff176" : color} strokeWidth={inspected ? 3 : 1.5} />
               <path d={`M ${point.x - 13} ${point.y - 5} L ${point.x} ${point.y - 22} L ${point.x + 13} ${point.y - 5} Z`} fill={color} stroke="#10231f" strokeWidth="1.5" />
               <text x={point.x} y={point.y + 9} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="8" fontWeight="700" fill={inspected ? "#1d1e33" : "#fff4cb"}>R{regionId + 1}</text>
               {active && <path d={`M ${point.x - 29} ${point.y - 25} L ${point.x + 29} ${point.y - 25}`} stroke={color} strokeWidth={inspected ? 3 : 1.5} opacity="0.8" />}
             </g>
           );
         })}
-        <text x="24" y="478" fontFamily="IBM Plex Mono, monospace" fontSize="10" fill="#a3d9b1">each satellite sends exactly three beams · select a clan or satellite to follow its relationships</text>
+        <text x="24" y="478" fontFamily="IBM Plex Mono, monospace" fontSize="10" fill="#a3d9b1">six clan islands · click an island or satellite to follow its relationships</text>
       </svg>
     </VisualCard>
   );
@@ -518,6 +519,7 @@ function N4FederationView({ model, selected, onSelect, showGallery = true }: { m
               selectedRegion={selectedRegion}
               activeRegionIds={activeRegionIds}
               onSelectRegion={setSelectedRegion}
+              onSelectClan={(clanId) => { setSelectedRegion(null); onSelect(clanId); }}
             />
           ) : (
             <FederationArchipelago
@@ -526,6 +528,7 @@ function N4FederationView({ model, selected, onSelect, showGallery = true }: { m
               selectedRegion={selectedRegion}
               activeRegionIds={activeRegionIds}
               onSelectRegion={setSelectedRegion}
+              onSelectClan={(clanId) => { setSelectedRegion(null); onSelect(clanId); }}
             />
           )}
           <FederationPath model={model} regionId={inspectedRegionId} selected={selected} selectedRegion={selectedRegion} />

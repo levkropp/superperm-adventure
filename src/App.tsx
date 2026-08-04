@@ -412,6 +412,29 @@ export default function App() {
           </DemoErrorBoundary>
         </Wide>
 
+        <details className="border-4 border-ink bg-[#f1ecff] shadow-[5px_5px_0_#5b3fbf]">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 font-mono text-[13px] font-bold uppercase tracking-[0.12em] text-accent">
+            <span>▸ show — why the HPV inequality is true</span>
+            <span className="text-[11px]">proof sketch</span>
+          </summary>
+          <div className="border-t-2 border-accent/25 px-5 py-5">
+            <P>
+              The formal HPV proof is a careful charging argument. This is the intuition behind it,
+              not a replacement for the published derivation. A walk through <TeX>p</TeX>{" "}houses has{" "}
+              <TeX>p-1</TeX>{" "}moves, so <TeX>p-1</TeX> is the baseline cost when every move is as cheap
+              as possible.
+            </P>
+            <P>
+              The bookkeeping then marks two kinds of events that force additional cost: completing
+              clans and entering new federations. Once the walk is divided into arcs and those events
+              are charged without counting any move twice, the formal accounting assigns <TeX>c</TeX>{" "}
+              extra units to completed clans and <TeX>v-1</TeX>{" "}extra units to federation entries.
+              Only the two ends of the walk escape those charges.
+            </P>
+            <TeX block>{"w \\;\\ge\\; (p-1) + c + (v-1) \\;=\\; p+c+v-2"}</TeX>
+          </div>
+        </details>
+
         {/* Lemma 4: HPV Inequality */}
         <Callout variant="proof" title="Lemma 4 · the HPV inequality">
           Houston, Pantone and Vatter package the count into a single inequality:
