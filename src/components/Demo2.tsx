@@ -295,12 +295,14 @@ export function TourBuilder3() {
         Any ordering of the six permutations, chained with maximum overlap, is a valid
         superpermutation. So the only question left is <em>which ordering is cheapest</em>.
         The permutations can be arranged into two clans of three: the <strong>123 clan</strong>{" "}
-        and the <strong>213 clan</strong>. Each clan shares a{" "}
+        and the <strong>132 clan</strong>. Each clan shares a{" "}
             <strong>rotation chain</strong> (which we will refer to as an <strong>arc</strong> later)
-            of cheap 1-cost moves. At the end of a rotation chain, only one of the three options in
-            the other clan has a cost of 2; the rest have a cost of 3.
-        Press “watch the optimal tour” to see the traveller walk it, or click towns on the
-        map to build your own.
+            of cheap 1-cost moves.<br /><br />Each house in one clan can jump to only one of the three options
+            in the other clan for a cost of 2. This allows for cheap travel between clans, so the
+            best way to visit all houses in both clans is to rotate through all the houses in your
+            clan, take the cheap 2-cost jump (let&apos;s call it a <strong>kick</strong>), then rotate
+            through the other two houses.<br /><br />Press “watch the optimal tour” to see the traveller
+        walk it, or click towns on the map to build your own.
       </Note>
 
       <div className="flex flex-wrap gap-2">
@@ -425,8 +427,8 @@ export function TourViewer4() {
         <Note>
           At n = 4 there are 24 permutations and the shortest superpermutation has 33
           characters. The map arranges them into six clans of four — the <strong>1234</strong>,{" "}
-          <strong>2314</strong>, <strong>3124</strong>, <strong>2134</strong>, <strong>1324</strong>,
-          and <strong>3214</strong> clans — each sharing a rotation chain of cheap 1-cost moves.
+          <strong>1243</strong>, <strong>1324</strong>, <strong>1342</strong>, <strong>1423</strong>,
+          and <strong>1432</strong> clans — each sharing a rotation chain of cheap 1-cost moves.
           Watch the traveller walk the optimal route, then watch a random route waste characters
           at almost every step.
         </Note>
@@ -503,12 +505,13 @@ export function RegionFederationDemo4() {
   return (
     <Panel label="Demo 8 · federation membership and archipelago" className="space-y-4">
       <Note>
-        Notice the first 3-cost jump in the optimal route: it leaves <strong>4312</strong> in the
-        <strong>3124</strong> clan and lands on <strong>2134</strong> in the <strong>2134</strong> clan.
-        The jump shares only the final <strong>2</strong> with the next permutation, so it costs 3.
-        A useful analogy for a 2-loop region is a <strong>federation</strong>: it gathers{" "}
-        three clans linked by 2-cost jumps, but it is not itself a clan. A clan
-        can belong to several federations, which is why their boundaries overlap.
+        Notice the first 3-cost jump in the optimal route. Now you can see the pattern: a group of
+        1-cost rotations (an <strong>arc</strong>) through the 4 houses of a clan, a group of 2-cost{" "}
+        jumps (kicks) through the 3 clans of a federation, and then an expensive 3-cost jump
+        between federations. A <strong>federation</strong> gathers 3 clans linked by 2-cost kicks. A clan
+        can belong to several federations, which is why their boundaries overlap. In our optimal
+        route example, the first group of kicks travels through the <strong>R1</strong> federation,
+        and the 3-cost jump takes us to the <strong>R3</strong> federation.
       </Note>
       <FederationMainDemo4 />
     </Panel>

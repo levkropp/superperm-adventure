@@ -197,7 +197,8 @@ export default function App() {
 
         <P>
           We now have all the concepts we need to move to <TeX>n = 6</TeX>, which has 720 houses,
-          120 clans, and 144 federations.
+          120 clans, and 144 federations. What&apos;s the shortest length string that includes all
+          variations of <TeX>123456</TeX>?
         </P>
       </Section>
 
@@ -210,18 +211,16 @@ export default function App() {
         lead={null}
       >
         <P>
-          The greedy algorithm gives a concrete way to build a superpermutation. Its recursive
-          construction produces lengths <TeX>1! + 2! + \cdots + n!</TeX>, giving 9, 33 and 153
-          for <TeX>n = 3, 4, 5</TeX> — each of them optimal. But at <TeX>n = 6</TeX>, the same
-          algorithm produces a string of length <strong>873</strong> without proving that 873 is
-          the shortest possible answer.
+          The greedy algorithm gives a concrete way to build a superpermutation. It doesn&apos;t give
+          the <em>best</em> way to build a superpermutation. At least not when you reach <TeX>n = 6</TeX>.
+          For <TeX>n = 3, 4, 5</TeX> it gives <strong>9, 33, 153</strong>, which are the shortest.
         </P>
 
         <P>
-          In 2014, Robin Houston found a valid string of length <strong>872</strong>. That means
-          the greedy algorithm does not find the best string: it only gives an upper bound on the
-          minimum, first showing <TeX>s(6) \le 873</TeX> and then being improved to{" "}
-          <TeX>s(6) \le 872</TeX>. How do we determine the minimum length we actually need?
+          But at <TeX>n = 6</TeX>, the greedy algorithm gives <strong>873</strong>, and in 2014 a
+          man named Robin Houston found a string of length <strong>872</strong>. That means the
+          greedy algorithm does not find the smallest string. How do we begin to determine what the
+          smallest string can actually be?
         </P>
       </Section>
 
@@ -582,6 +581,33 @@ export default function App() {
                 <strong>28 July 2026 — two independent AI-assisted proof efforts, on the same
                 day.</strong> They appeared without knowledge of one another and independently
                 supported the 872 conclusion.
+                <ul className="ml-5 mt-2 list-disc space-y-2">
+                  <li>
+                    <strong>vlad-ds — a direct computer-assisted exact result.</strong>{" "}
+                    <a
+                      className="font-mono text-accent underline decoration-accent/40 underline-offset-2"
+                      href="https://github.com/vlad-ds/a6-872"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      vlad-ds/a6-872
+                    </a>{" "}
+                    gives a preliminary computer-assisted proof of <TeX>s(6)=872</TeX> exactly.
+                  </li>
+                  <li>
+                    <strong>BGray-wrl — a formally verified Lean proof.</strong>{" "}
+                    <a
+                      className="font-mono text-accent underline decoration-accent/40 underline-offset-2"
+                      href="https://github.com/BGray-wrl/superperm6"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      BGray-wrl/superperm6
+                    </a>{" "}
+                    formally verifies both bounds and proves that the shortest superpermutation on
+                    six symbols has length <TeX>872</TeX>.
+                  </li>
+                </ul>
               </li>
               <li>
                 <strong>2021 — Cole Fritsch.</strong> Years earlier, Cole Fritsch posted a
@@ -589,20 +615,6 @@ export default function App() {
                 strings to the Superpermutators group; the search returned nothing. The write-up
                 was acknowledged at the time to still have gaps, but its conclusion —{" "}
                 <TeX>s(6) = 872</TeX> — matches what the Lean proofs later certified.
-              </li>
-              <li>
-                <strong>vlad-ds — a direct computer-assisted exact result.</strong>{" "}
-                <a
-                  className="font-mono text-accent underline decoration-accent/40 underline-offset-2"
-                  href="https://github.com/vlad-ds/a6-872"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  vlad-ds/a6-872
-                </a>{" "}
-                gives a preliminary computer-assisted proof of <TeX>s(6)=872</TeX> exactly.
-                Audits are explicitly invited, so “settled with very high probability” is a
-                better description than “fully closed beyond review”.
               </li>
             </ul>
             <P className="mt-2">
@@ -658,15 +670,8 @@ export default function App() {
 
           <div className="border-4 border-gold bg-[#fff2cd] p-5 shadow-[5px_5px_0_#b26a12]">
             <div className="mb-2 font-mono text-[12px] font-bold uppercase tracking-[0.12em] text-gold">
-              Where that leaves this paper
+              Beyond n = 6
             </div>
-            <P>
-              The 868 proof you just read is no longer the frontier — it was overtaken within
-              days by 869, and then by the exact answer. What makes it worth keeping is that it
-              is <em>elementary</em>: two lemmas and one finite check, all of which you can hold
-              in your head and watch happen on a map. The Lean proofs are stronger and the
-              machines are faster, but nobody has to trust a solver to follow the argument here.
-            </P>
             <P className="mt-2">
               For <TeX>s(7)</TeX>, the unconditional machine-checked lower bound is 5888 and the
               best known upper bound is 5906. There is also a <strong>conditional lower bound</strong>{" "}

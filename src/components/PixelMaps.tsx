@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { allPerms, key, Perm, weight, wheelOfPerm } from "../lib/perms";
+import { allPerms, canonicalRotation, key, Perm, weight, wheelOfPerm } from "../lib/perms";
 
 type Point = { x: number; y: number };
 
@@ -492,7 +492,7 @@ function ClanCoats({ n, villageLayout }: { n: 2 | 3 | 4; villageLayout: boolean 
   return (
     <g>
       {centers.map((at, i) => (
-        <ClanCoat key={i} clan={order[i * size]} at={at} />
+        <ClanCoat key={i} clan={canonicalRotation(order[i * size])} at={at} />
       ))}
     </g>
   );

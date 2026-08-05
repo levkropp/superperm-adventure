@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { buildLoopStructure, key, loopWheelSets, Perm } from "../lib/perms";
+import { buildLoopStructure, canonicalRotation, key, loopWheelSets, Perm } from "../lib/perms";
 
 type RegionModel = {
   n: number;
@@ -30,7 +30,7 @@ function makeModel(n: number): RegionModel {
 }
 
 function clanLabel(clans: Perm[][], id: number) {
-  return key(clans[id]?.[0] ?? []);
+  return key(canonicalRotation(clans[id]?.[0] ?? []));
 }
 
 function Selector({ model, selected, onSelect }: { model: RegionModel; selected: number; onSelect: (id: number) => void }) {

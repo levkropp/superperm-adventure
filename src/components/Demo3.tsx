@@ -953,7 +953,7 @@ const CASE_B_STAGES = [
     body: (
       <>
         Each 2-loop federation holds exactly 30 houses, which is exactly 5 whole clans. If the
-        traveller opens <V n="v">v</V> = 24 federations, those federations have room for 24 × 30 ={" "}
+        traveller enters <V n="v">v</V> = 24 federations through their gates, those federations have room for 24 × 30 ={" "}
         <strong>720 houses</strong> — or, counting in clans, 24 × 5 = <strong>120 clans</strong>.
         The world contains exactly 720 houses in 120 clans. The capacity matches the world
         with nothing to spare.
@@ -965,9 +965,9 @@ const CASE_B_STAGES = [
     head: "Everyone must get a seat",
     body: (
       <>
-        The traveller has to visit all 720 houses, and he can only ever be inside a federation he has
-        opened. So every single house must lie in one of his 24 federations. Nobody is allowed to be
-        left out.
+        The traveller has to visit all 720 houses. Every jump into a federation must land on one of
+        its gates, so the route can only reach houses in federations it has entered. Therefore every
+         single house must lie in one of those 24 federations. Nobody is allowed to be left out.
       </>
     ),
   },
@@ -999,10 +999,10 @@ const CASE_B_STAGES = [
     head: "A tiling takes away all the freedom",
     body: (
       <>
-        At <TeX>n = 6</TeX>, each clan belongs to {COVER.perWheel} possible federations. Case B opens
+        At <TeX>n = 6</TeX>, each clan belongs to {COVER.perWheel} possible federations. Case B enters
         exactly 24 federations × 5 clans = <strong>120 clan-seats</strong>, matching the world&apos;s
-        120 clans. Therefore no two open federations can share a clan: every clan has exactly one
-        open gate. That gate fixes the entry house, so the
+        120 clans. Therefore no two entered federations can share a clan: every clan has exactly one
+         entry gate. That gate fixes the entry house, so the
         traveller must lap all six houses in each clan before moving on. Finish your clans! The forced cost is 120 clans
         × 5 cheap steps = <strong>600 characters locked in</strong>, before any hop between clans.
       </>

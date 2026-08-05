@@ -232,6 +232,17 @@ export function wheelOfPerm(p: Perm): Perm[] {
   return out;
 }
 
+/** Canonical name for a rotation clan: its lexicographically first rotation. */
+export function canonicalRotation(p: Perm): Perm {
+  let best = [...p];
+  let current = [...p];
+  for (let i = 1; i < p.length; i++) {
+    current = rot(current);
+    if (key(current) < key(best)) best = [...current];
+  }
+  return best;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Walk statistics                                                    */
 /* ------------------------------------------------------------------ */
